@@ -35,13 +35,64 @@ body {
 
 .auth-banner {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 10px;
-  padding: 8px;
+  padding: 16px;
   border: 1px solid var(--vscode-inputValidation-infoBorder);
   background: var(--vscode-inputValidation-infoBackground);
+  border-radius: 6px;
+}
+
+.auth-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.auth-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--vscode-foreground);
+}
+
+.auth-subtitle {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.auth-right {
+  display: flex;
+  align-items: center;
+}
+
+.token-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.token-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+}
+
+.token-form label {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.token-form input {
+  padding: 6px 8px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.token-form .hint {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
 }
 
 .repo-row,
@@ -83,7 +134,7 @@ button {
 .issues-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   max-height: 340px;
   overflow: auto;
   margin-bottom: 8px;
@@ -92,13 +143,16 @@ button {
 .issue-row {
   text-align: left;
   width: 100%;
-  padding: 8px;
+  padding: 12px;
   border: 1px solid var(--vscode-sideBar-border);
-  background: transparent;
+  background: var(--vscode-input-background);
+  border-radius: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .issue-row:hover {
   background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
 }
 
 .issue-title {
@@ -133,7 +187,9 @@ button {
 
 .comment {
   border: 1px solid var(--vscode-sideBar-border);
-  padding: 6px;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--vscode-input-background);
 }
 
 .comment-head {
@@ -168,11 +224,16 @@ button {
   border-color: var(--vscode-button-border);
   color: var(--vscode-button-foreground);
   background: var(--vscode-button-background);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
 }
 
 .secondary-btn,
 .icon-btn {
   background: var(--vscode-input-background);
+  padding: 6px 12px;
+  border-radius: 4px;
 }
 
 .danger-btn {
