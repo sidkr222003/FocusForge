@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'nonce-__NONCE__'; script-src 'nonce-__NONCE__';" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link nonce="__NONCE__" rel="stylesheet" href="__CODICON__" />
+  <link nonce="__NONCE__" rel="stylesheet" href="__CSS__" />
+  <title>Session Tracker</title>
+</head>
+<body>
+  <div class="tabs">
+    <button class="tab">Today</button>
+    <button class="tab">Goals</button>
+    <button class="tab">Awards</button>
+    <button class="tab">History</button>
+    <button class="tab tab-active">Issues</button>
+  </div>
+
+  <section class="panel" id="issuesPanel">
+    <div id="authBanner" class="auth-banner hidden">
+      <div class="auth-left">
+        <div class="auth-title">GitHub connection required</div>
+        <div class="auth-subtitle">
+          Sign in to load issues and save completion logs.
+        </div>
+      </div>
+
+      <div class="auth-right">
+        <div id="tokenStage" class="token-stage">
+          <button id="connectBtn" class="primary-btn">
+            Connect GitHub
+          </button>
+
+          <div id="tokenForm" class="token-form hidden">
+            <label for="tokenInput">Enter token</label>
+            <input id="tokenInput" type="password" placeholder="ghp_..." />
+            <button id="saveTokenBtn" class="primary-btn">Save token</button>
+            <div class="hint small" id="tokenHint">
+              This token is stored in VS Code SecretStorage.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="repo-row">
+      <span class="codicon codicon-repo"></span>
+      <select id="repoSelect"></select>
+      <button id="newIssueBtn" class="icon-btn" title="New issue"><span class="codicon codicon-add"></span></button>
+    </div>
+
+    <div class="search-row">
+      <span class="codicon codicon-search"></span>
+      <input id="searchInput" type="search" placeholder="Search issues..." />
+    </div>
+
+    <div class="filter-row">
+      <select id="stateFilter">
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+        <option value="all">All</option>
+      </select>
+      <input id="labelsFilter" placeholder="labels: bug,high" />
+    </div>
+
+    <div id="listView">
+      <div id="issuesList" class="issues-list"></div>
+      <button id="loadMoreBtn" class="secondary-btn">Load more</button>
+    </div>
+
+    <div id="detailView" class="hidden">
+      <button id="backBtn" class="back-btn"><span class="codicon codicon-arrow-left"></span> Back</button>
+      <h2 id="detailTitle" class="issue-title"></h2>
+      <input id="titleInput" class="text-input hidden" />
+      <div class="meta-row" id="detailMeta"></div>
+      <textarea id="bodyInput" class="body-edit hidden"></textarea>
+      <div id="detailBody" class="issue-body"></div>
+
+      <div class="section-title">Labels</div>
+      <div class="labels-editor">
+        <div id="currentLabels"></div>
+        <button id="editLabelsBtn" class="secondary-btn">Edit labels</button>
+        <button id="saveLabelsBtn" class="secondary-btn hidden">Save labels</button>
+        <div id="labelsPicker" class="dropdown hidden"></div>
+      </div>
+
+      <div class="section-title">Assignees</div>
+      <div class="field-row">
+        <select id="assigneeSelect"></select>
+        <button id="addAssigneeBtn" class="secondary-btn">Add assignee</button>
+        <div id="currentAssignees"></div>
+      </div>
+
+      <div class="section-title">Conversation</div>
+      <div id="conversation" class="conversation"></div>
+      <textarea id="commentInput" placeholder="Leave a comment..."></textarea>
+      <button id="commentBtn" class="primary-btn">Comment</button>
+
+      <div class="section-title">Log completion</div>
+      <div id="logBadge" class="log-badge hidden">Logged</div>
+      <div class="field-row">
+        <label>Outcome</label>
+        <select id="outcomeSelect">
+          <option value="shipped">Shipped</option>
+          <option value="partially-fixed">Partial</option>
+          <option value="investigated">Investigated</option>
+          <option value="unblocked">Unblocked</option>
+          <option value="open">Open</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <label>Completed at</label>
+        <div class="time-row">
+          <input type="date" id="completedDate" />
+          <input type="time" id="completedTime" />
+          <button id="setNowBtn" class="secondary-btn">Now</button>
+        </div>
+        <div id="timeHint" class="hint"></div>
+      </div>
+      <div class="field-row">
+        <label>What changed</label>
+        <div id="changeBullets"></div>
+        <button id="addBulletBtn" class="secondary-btn">Add line</button>
+      </div>
+      <div class="field-row">
+        <label>Outcome note</label>
+        <textarea id="outcomeNote"></textarea>
+      </div>
+      <div class="field-row">
+        <label>Mood (1-5)</label>
+        <input id="moodInput" min="1" max="5" type="number" />
+      </div>
+      <button id="saveLogBtn" class="primary-btn">Save completion log</button>
+
+      <div class="actions-row">
+        <button id="closeIssueBtn" class="danger-btn">Close issue</button>
+        <button id="reopenIssueBtn" class="success-btn hidden">Reopen issue</button>
+      </div>
+    </div>
+  </section>
+
+  <script nonce="__NONCE__" src="__JS__"></script>
+</body>
+</html>

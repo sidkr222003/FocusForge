@@ -4,10 +4,10 @@
   "description": "Track deep-work sessions with live dashboard: heatmap, achievements, badges, goals, history & more.",
   "version": "1.0.0",
   "publisher": "devtoolkit",
-  "engines": { "vscode": "^1.85.0" },
+  "engines": { "vscode": "^1.90.0" },
   "categories": ["Other"],
   "icon": "images/icon.png",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": ["onStartupFinished","onView:devToolkit.issueView","onCommand:devToolkit.issues.refresh","onCommand:devToolkit.issues.connectGitHub","onCommand:devToolkit.issues.disconnectGitHub","onCommand:devToolkit.issues.generateReport","onCommand:devToolkit.issues.generateReportLast","onCommand:devToolkit.issues.exportLog"],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -25,6 +25,12 @@
           "type": "webview",
           "id": "devToolkit.sessionTracker",
           "name": "Session Tracker",
+          "retainContextWhenHidden": true
+        },
+        {
+          "type": "webview",
+          "id": "devToolkit.issueView",
+          "name": "Issue Log",
           "retainContextWhenHidden": true
         }
       ]
@@ -48,7 +54,14 @@
       { "command": "devToolkit.exportSessionData",     "title": "Session Tracker: Export Data" },
       { "command": "devToolkit.resetToday",            "title": "Session Tracker: Reset Today" },
       { "command": "devToolkit.setDailyGoal",          "title": "Session Tracker: Set Daily Goal" },
-      { "command": "devToolkit.toggleSessionTracking", "title": "Session Tracker: Toggle Tracking" }
+      { "command": "devToolkit.toggleSessionTracking", "title": "Session Tracker: Toggle Tracking" },
+      { "command": "devToolkit.issues.refresh", "title": "Issues: Refresh" },
+      { "command": "devToolkit.issues.connectGitHub", "title": "Issues: Connect GitHub Account" },
+      { "command": "devToolkit.issues.disconnectGitHub", "title": "Issues: Disconnect GitHub Account" },
+      { "command": "devToolkit.issues.newIssue", "title": "Issues: Create New Issue" },
+      { "command": "devToolkit.issues.generateReport", "title": "Issues: Generate Weekly Report" },
+      { "command": "devToolkit.issues.generateReportLast", "title": "Issues: Generate Last Week's Report" },
+      { "command": "devToolkit.issues.exportLog", "title": "Issues: Export Completion Log (JSON/CSV)" }
     ],
     "configuration": {
       "title": "Session Tracker",
@@ -137,13 +150,15 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "build": "tsc -p ./",
     "package": "vsce package"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@vscode/codicons": "0.0.36"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
-    "@vscode/codicons": "^0.0.35",
     "typescript": "^5.3.0"
   }
 }
