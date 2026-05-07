@@ -88,86 +88,6 @@ FocusForge includes a GitHub issue workflow designed for local workspaces:
 - Supports issue creation, commenting, open-in-browser, copy link, close/reopen, and completion logs.
 - Completion logs can be included in weekly reports.
 
-## Phase 2 And Phase 3 Features
-
-### Pomodoro Mode
-
-Defaults are 25 minutes work, 5 minutes short break, and 15 minutes long break. Every fourth completed work block triggers a long break. Completed Pomodoros are saved on each session and surfaced in the dashboard, history, status bar, exports, and reports.
-
-### Project Analytics
-
-Project IDs are derived from GitHub remotes when available:
-
-```json
-{
-  "projectId": "git:github.com/user/repo",
-  "displayName": "repo"
-}
-```
-
-If no GitHub remote exists, FocusForge falls back to generic Git remote or workspace path identifiers.
-
-### Git Commit Correlation
-
-During a session, FocusForge periodically runs:
-
-```bash
-git log --oneline --since=<sessionStart> --until=<now>
-```
-
-Commit hashes and messages are attached to the session record.
-
-### Planner And Calendar Export
-
-Create planned sessions from the Goals tab. When real tracked work overlaps a planned slot, FocusForge marks the plan fulfilled. Export plans as an `.ics` file for Google Calendar, Outlook, Apple Calendar, or other calendar apps.
-
-### Team Leaderboard
-
-Leaderboard is opt-in and serverless. Each teammate can share a private GitHub Gist containing:
-
-```json
-{
-  "name": "Ada",
-  "todayMinutes": 145,
-  "streak": 8,
-  "focusScore": 91,
-  "avatar": "◆"
-}
-```
-
-FocusForge fetches those Gists client-side and ranks the team locally.
-
-### Ambient Focus Audio
-
-The dashboard footer includes a small Web Audio focus player with rain, ocean, fireplace, cafe, forest, and lo-fi sound profiles. It does not fetch external audio files.
-
-### AI Weekly Insight
-
-AI insights are disabled by default. When enabled, FocusForge uses the existing stored GitHub token to call GitHub Models. The payload is aggregate productivity data only:
-
-- Daily minute totals.
-- Average focus scores.
-- Streak data.
-- Language distribution.
-- Project totals.
-
-No source code, file names, personal identifiers, or issue content is sent.
-
-### Weekly Reports
-
-Generate Markdown and HTML reports with:
-
-- Total focused time.
-- Total sessions.
-- Average Focus Score.
-- Top languages.
-- Top projects.
-- Pomodoros completed.
-- Commits logged.
-- Issue completion summaries.
-- Goal performance.
-
-Reports are saved under `.vscode/session-reports/`.
 
 ## Privacy Model
 
@@ -289,7 +209,7 @@ Press `F5` in VS Code and choose **Run Extension**.
 
 ```bash
 npm run package
-code --install-extension focusforge-1.1.0.vsix
+code --install-extension focusforge-1.0.0.vsix
 ```
 
 ## Requirements
@@ -300,8 +220,6 @@ code --install-extension focusforge-1.1.0.vsix
 
 ## Documentation
 
-- Feature docs: [docs/FEATURES](docs/FEATURES)
-- Testing guides: [docs/TESTING](docs/TESTING)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ## License
