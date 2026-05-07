@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource}; font-src ${webview.cspSource}; media-src https: http:; img-src ${webview.cspSource} https: data:;">
+  <link rel="stylesheet" href="${codiconsUri}">
+  <link rel="stylesheet" href="${styleUri}">
+  <title>Focus Sounds</title>
+</head>
+<body>
+  <div class="shell">
+    <header class="app-header">
+      <span class="app-title">
+        <i class="codicon codicon-music"></i>
+        Focus Sounds
+      </span>
+      <button id="refreshBtn" class="icon-btn" title="Refresh libraries"><i class="codicon codicon-refresh"></i></button>
+    </header>
+
+    <section class="now-band">
+      <div class="now-disc">
+        <i class="codicon codicon-play-circle"></i>
+      </div>
+      <div class="now-main">
+        <span class="eyebrow">Now Playing</span>
+        <strong id="nowTitle">Nothing yet</strong>
+        <span id="nowMeta">Refresh libraries, then select a track.</span>
+      </div>
+      <button id="stopBtn" class="icon-btn stop-btn" title="Stop"><i class="codicon codicon-debug-stop"></i></button>
+      <input id="volumeInput" class="volume" type="range" min="0" max="1" step="0.05" value="0.4" title="Volume">
+      <audio id="audioPlayer" preload="none" loop></audio>
+    </section>
+
+    <section class="section-block">
+      <div class="section-header">
+        <i class="codicon codicon-github"></i>
+        <span>GitHub Sounds</span>
+        <span id="githubCount" class="section-hint">0 tracks</span>
+      </div>
+      <label class="field" for="sourceUrlInput">
+        <span>Repository path, folder, raw URL, or blob URL</span>
+        <input id="sourceUrlInput" type="url" placeholder="https://github.com/sidkr222003/FocusForge/tree/main/media/sounds">
+      </label>
+      <div class="action-grid">
+        <button id="saveSourceBtn" class="secondary-btn"><i class="codicon codicon-save"></i> Save Source</button>
+        <button id="openSourceBtn" class="secondary-btn"><i class="codicon codicon-link-external"></i> Open Source</button>
+      </div>
+      <div id="githubGrid" class="sound-grid"></div>
+    </section>
+
+    <section class="section-block">
+      <div class="section-header">
+        <i class="codicon codicon-broadcast"></i>
+        <span>Music For Programming</span>
+        <span id="mfpCount" class="section-hint">0 episodes</span>
+      </div>
+      <div class="mfp-source">
+        <div>
+          <strong>isdampe/music-for-programming</strong>
+          <span>Episode list from musicforprogramming.net RSS, playable directly in this view.</span>
+        </div>
+        <button id="openMfpRepoBtn" class="icon-btn" title="Open repository"><i class="codicon codicon-link-external"></i></button>
+      </div>
+      <div class="filter-row">
+        <i class="codicon codicon-search"></i>
+        <input id="searchInput" type="search" placeholder="Search episodes...">
+      </div>
+      <div id="mfpGrid" class="sound-grid episode-grid"></div>
+    </section>
+
+    <footer id="statusLine" class="status-line">Loading...</footer>
+  </div>
+  <script src="${scriptUri}"></script>
+</body>
+</html>

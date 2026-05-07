@@ -7,11 +7,13 @@ import { registerWeeklyTrigger } from "./weeklyReport/trigger";
 import { registerSessionTimer } from "./sessionTimer";
 import { registerSessionTracker } from "./sessionTracker";
 import { registerDeepWorkMode } from "./features/deepWorkMode";
+import { FocusSoundsViewController } from "./focusSounds/FocusSoundsViewController";
 
 export function activate(context: vscode.ExtensionContext): void {
   const store = new IssueStore(context);
   const client = new GitHubClient(() => store.getToken());
   const controller = new IssueViewController(context, store, client);
+  const soundsController = new FocusSoundsViewController(context);
   const reports = new WeeklyReportGenerator(context, store);
 
   // Existing registrations
@@ -20,7 +22,10 @@ export function activate(context: vscode.ExtensionContext): void {
   registerDeepWorkMode(context);
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(IssueViewController.viewId, controller)
+    vscode.window.registerWebviewViewProvider(IssueViewController.viewId, controller),
+    vscode.window.registerWebviewViewProvider(FocusSoundsViewController.viewId, soundsController, {
+      webviewOptions: { retainContextWhenHidden: true },
+    })
   );
 
   context.subscriptions.push(

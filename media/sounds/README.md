@@ -1,6 +1,6 @@
 # FocusForge Sound Tracks
 
-Add ambient MP3 files here with these exact names:
+Add ambient MP3 files here with these exact names, then push them to GitHub:
 
 - `rain.mp3`
 - `ocean.mp3`
@@ -9,5 +9,4 @@ Add ambient MP3 files here with these exact names:
 - `forest.mp3`
 - `lofi.mp3`
 
-The dashboard sound selector maps directly to these files. MP3 files are not committed by default so you can use your own licensed audio loops without increasing the extension package size.
-
+The Focus Sounds view streams these files from the configured GitHub raw folder URL when a track is played. `.vscodeignore` excludes `media/sounds/*.mp3`, so the VSIX package does not include the audio files.

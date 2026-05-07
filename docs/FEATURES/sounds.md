@@ -1,25 +1,30 @@
 # FocusForge Sounds
 
-FocusForge plays real MP3 files from `media/sounds` in the Session Tracker footer. Add the files below to enable the built-in track list:
+FocusForge has a dedicated **Focus Sounds** view. It does not bundle MP3 files in the extension package. Instead, it discovers public MP3 files from GitHub and streams the selected file only when the user presses play.
 
-| Dashboard option | File path |
-| --- | --- |
-| Rain Focus | `media/sounds/rain.mp3` |
-| Ocean Drift | `media/sounds/ocean.mp3` |
-| Fireplace | `media/sounds/fireplace.mp3` |
-| Cafe Room | `media/sounds/cafe.mp3` |
-| Forest Loop | `media/sounds/forest.mp3` |
-| Lo-fi Pulse | `media/sounds/lofi.mp3` |
+## GitHub MP3 Library
 
-## Custom MP3
+Default GitHub folder:
 
-Use the folder button beside the audio selector to choose any local `.mp3` file for the current dashboard session. Custom files are loaded through the browser file picker and are not copied into the extension.
+```text
+https://github.com/sidkr222003/FocusForge/tree/main/media/sounds
+```
 
-## Audio Guidelines
+The source field accepts:
 
-- Use licensed or self-created audio only.
-- Keep each loop short and seamless, ideally 2-10 minutes.
-- Export as standard `audio/mpeg` MP3.
-- Keep volume normalized so switching tracks does not create sudden jumps.
-- If a built-in option does not play, confirm the matching file exists in `media/sounds` and rebuild or reload the extension host.
+- A GitHub folder URL, such as `/tree/main/media/sounds`.
+- A GitHub file URL, such as `/blob/main/media/sounds/cafe.mp3`.
+- A raw GitHub folder or file URL.
+- Any direct public HTTPS `.mp3` URL.
 
+When a folder URL is used, FocusForge asks the GitHub Contents API for the real `.mp3` files and only renders files that exist. This avoids broken fixed cards like `rain.mp3` when that file is not present.
+
+## Music For Programming
+
+The Focus Sounds view also loads the public `musicforprogramming.net` RSS feed, inspired by [`isdampe/music-for-programming`](https://github.com/isdampe/music-for-programming). Episodes are displayed as playable cards and stream directly from their published audio URLs.
+
+## Packaging
+
+`.vscodeignore` excludes `media/sounds/*.mp3`, so local MP3 files are not packed into the VSIX. Keep the MP3 files in the GitHub repository or another public raw-file host if you want installed extensions to stream them.
+
+For custom in-extension playback, use GitHub-hosted MP3 files that you own or are licensed to use.

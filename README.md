@@ -4,8 +4,6 @@ FocusForge turns VS Code into a local-first productivity cockpit for developers 
 
 No extension server. No telemetry pipeline. Your session history stays local unless you explicitly opt into GitHub-powered features.
 
-![FocusForge icon](images/icon.png)
-
 ## Highlights
 
 - Live session dashboard with active time, idle time, efficiency, streaks, and flow state.

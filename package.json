@@ -39,6 +39,7 @@
     "onStartupFinished",
     "onView:devToolkit.sessionTracker",
     "onView:devToolkit.issueView",
+    "onView:devToolkit.focusSounds",
     "onCommand:devToolkit.startSession",
     "onCommand:devToolkit.endSession",
     "onCommand:devToolkit.openSessionDashboard",
@@ -84,6 +85,12 @@
           "type": "webview",
           "id": "devToolkit.issueView",
           "name": "Issue Log",
+          "retainContextWhenHidden": true
+        },
+        {
+          "type": "webview",
+          "id": "devToolkit.focusSounds",
+          "name": "Focus Sounds",
           "retainContextWhenHidden": true
         }
       ]

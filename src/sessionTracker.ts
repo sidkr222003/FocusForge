@@ -521,19 +521,6 @@ class SessionTrackerViewProvider implements vscode.WebviewViewProvider {
           )
         )
       : "";
-    const soundUri = (fileName: string) =>
-      webview
-        ? webview.asWebviewUri(
-            vscode.Uri.joinPath(this.context.extensionUri, "media", "sounds", fileName)
-          )
-        : "";
-    const soundRainUri = soundUri("rain.mp3");
-    const soundOceanUri = soundUri("ocean.mp3");
-    const soundFireplaceUri = soundUri("fireplace.mp3");
-    const soundCafeUri = soundUri("cafe.mp3");
-    const soundForestUri = soundUri("forest.mp3");
-    const soundLofiUri = soundUri("lofi.mp3");
-
     const htmlPath = path.join(
       this.context.extensionUri.fsPath,
       "src",
@@ -551,13 +538,7 @@ class SessionTrackerViewProvider implements vscode.WebviewViewProvider {
       .replace(/\$\{webview\.cspSource\}/g, cspSource)
       .replace(/\$\{codiconsUri\}/g, String(codiconsUri))
       .replace(/\$\{styleUri\}/g, String(styleUri))
-      .replace(/\$\{scriptUri\}/g, String(scriptUri))
-      .replace(/\$\{soundRainUri\}/g, String(soundRainUri))
-      .replace(/\$\{soundOceanUri\}/g, String(soundOceanUri))
-      .replace(/\$\{soundFireplaceUri\}/g, String(soundFireplaceUri))
-      .replace(/\$\{soundCafeUri\}/g, String(soundCafeUri))
-      .replace(/\$\{soundForestUri\}/g, String(soundForestUri))
-      .replace(/\$\{soundLofiUri\}/g, String(soundLofiUri));
+      .replace(/\$\{scriptUri\}/g, String(scriptUri));
   }
 
   public navigateToTab(tab: string) {

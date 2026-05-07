@@ -67,7 +67,7 @@ body {
   background: var(--vscode-sideBar-background, #252526);
   line-height: 1.5;
   overflow-x: hidden;
-  padding-bottom: 38px;
+  padding-bottom: 0;
   user-select: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -405,30 +405,6 @@ body {
 .leaderboard-rank { width: 24px; font-weight: 800; color: var(--accent); }
 .insight-card ul { margin-left: 16px; }
 
-.audio-footer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-top: 1px solid var(--border);
-  background: var(--vscode-sideBar-background);
-  z-index: 20;
-}
-.audio-select {
-  flex: 1;
-  min-width: 0;
-  height: 24px;
-  color: var(--vscode-input-foreground);
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, var(--border));
-}
-.audio-volume { width: 74px; }
-
 @media (max-width: 330px) {
   .planner-stats,
   .planner-form {
@@ -444,9 +420,6 @@ body {
     flex-basis: 38px;
   }
 
-  .audio-volume {
-    width: 58px;
-  }
 }
 
 /* ══ LIVE STRIP ════════════════════════════════════════════════ */

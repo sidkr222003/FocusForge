@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource}; font-src ${webview.cspSource}; media-src ${webview.cspSource} blob:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource}; font-src ${webview.cspSource};">
   <link rel="stylesheet" href="${codiconsUri}">
   <link rel="stylesheet" href="${styleUri}">
   <title>Session Tracker</title>
@@ -723,33 +723,6 @@
   </section>
 
 </div><!-- /.root -->
-
-<footer class="audio-footer">
-  <button id="audioToggleBtn" class="icon-btn" title="Play ambient focus audio">
-    <i class="codicon codicon-play"></i>
-  </button>
-  <select id="audioTrackSelect" class="audio-select" title="Ambient track">
-    <option value="rain">Rain Focus</option>
-    <option value="ocean">Ocean Drift</option>
-    <option value="fireplace">Fireplace</option>
-    <option value="cafe">Cafe Room</option>
-    <option value="forest">Forest Loop</option>
-    <option value="lofi">Lo-fi Pulse</option>
-    <option value="custom">Custom MP3...</option>
-  </select>
-  <button id="customAudioBtn" class="icon-btn" title="Choose custom MP3">
-    <i class="codicon codicon-folder-opened"></i>
-  </button>
-  <input id="customAudioInput" class="hidden" type="file" accept="audio/mpeg,.mp3" />
-  <input id="audioVolume" class="audio-volume" type="range" min="0" max="1" step="0.05" value="0.4" title="Volume" />
-  <audio id="ambientAudio" loop preload="none"
-    data-rain="${soundRainUri}"
-    data-ocean="${soundOceanUri}"
-    data-fireplace="${soundFireplaceUri}"
-    data-cafe="${soundCafeUri}"
-    data-forest="${soundForestUri}"
-    data-lofi="${soundLofiUri}"></audio>
-</footer>
 
 <!-- ══ SESSION NOTE COMPOSER ══════════════════════════════════ -->
 <div id="noteComposer" class="note-composer hidden">

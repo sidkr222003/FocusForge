@@ -44,16 +44,20 @@ const trigger_1 = require("./weeklyReport/trigger");
 const sessionTimer_1 = require("./sessionTimer");
 const sessionTracker_1 = require("./sessionTracker");
 const deepWorkMode_1 = require("./features/deepWorkMode");
+const FocusSoundsViewController_1 = require("./focusSounds/FocusSoundsViewController");
 function activate(context) {
     const store = new IssueStore_1.IssueStore(context);
     const client = new GitHubClient_1.GitHubClient(() => store.getToken());
     const controller = new IssueViewController_1.IssueViewController(context, store, client);
+    const soundsController = new FocusSoundsViewController_1.FocusSoundsViewController(context);
     const reports = new WeeklyReportGenerator_1.WeeklyReportGenerator(context, store);
     // Existing registrations
     (0, sessionTimer_1.registerSessionTimer)(context);
     (0, sessionTracker_1.registerSessionTracker)(context, () => store.getToken());
     (0, deepWorkMode_1.registerDeepWorkMode)(context);
-    context.subscriptions.push(vscode.window.registerWebviewViewProvider(IssueViewController_1.IssueViewController.viewId, controller));
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider(IssueViewController_1.IssueViewController.viewId, controller), vscode.window.registerWebviewViewProvider(FocusSoundsViewController_1.FocusSoundsViewController.viewId, soundsController, {
+        webviewOptions: { retainContextWhenHidden: true },
+    }));
     context.subscriptions.push(vscode.commands.registerCommand("devToolkit.issues.refresh", () => controller.refresh()), vscode.commands.registerCommand("devToolkit.issues.connectGitHub", () => controller.connectGitHub()), vscode.commands.registerCommand("devToolkit.issues.disconnectGitHub", async () => {
         await store.clearToken();
         vscode.window.showInformationMessage("GitHub token removed from VS Code SecretStorage.");
