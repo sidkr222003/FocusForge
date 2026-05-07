@@ -59,12 +59,30 @@ function activate(context) {
         vscode.window.showInformationMessage("GitHub token removed from VS Code SecretStorage.");
         await controller.refresh();
     }), vscode.commands.registerCommand("devToolkit.issues.newIssue", async () => {
-        const repo = (await GitHubClient_1.GitHubClient.detectRepo()) ?? store.getLastRepo();
+        const repo = await GitHubClient_1.GitHubClient.detectRepo();
         if (!repo) {
             vscode.window.showErrorMessage("No repository detected.");
             return;
         }
-        await vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${repo}/issues/new`));
+        const token = await store.getToken();
+        if (!token) {
+            await vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${repo}/issues/new`));
+            return;
+        }
+        const title = await vscode.window.showInputBox({
+            prompt: `Create issue in ${repo}`,
+            placeHolder: "Issue title"
+        });
+        if (!title?.trim()) {
+            return;
+        }
+        const body = await vscode.window.showInputBox({
+            prompt: "Issue body (optional)",
+            placeHolder: "Describe the issue"
+        });
+        const issue = await client.createIssue(repo, { title: title.trim(), body: body ?? "" });
+        await controller.refresh();
+        vscode.window.showInformationMessage(`Created issue #${issue.number} in ${repo}.`);
     }), vscode.commands.registerCommand("devToolkit.issues.generateReport", async () => {
         const file = await reports.generateCurrentWeek();
         vscode.window.showInformationMessage("Weekly report generated.", "Open Report").then((choice) => {

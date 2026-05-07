@@ -34,12 +34,30 @@ export function activate(context: vscode.ExtensionContext): void {
       await controller.refresh();
     }),
     vscode.commands.registerCommand("devToolkit.issues.newIssue", async () => {
-      const repo = (await GitHubClient.detectRepo()) ?? store.getLastRepo();
+      const repo = await GitHubClient.detectRepo();
       if (!repo) {
         vscode.window.showErrorMessage("No repository detected.");
         return;
       }
-      await vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${repo}/issues/new`));
+      const token = await store.getToken();
+      if (!token) {
+        await vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${repo}/issues/new`));
+        return;
+      }
+      const title = await vscode.window.showInputBox({
+        prompt: `Create issue in ${repo}`,
+        placeHolder: "Issue title"
+      });
+      if (!title?.trim()) {
+        return;
+      }
+      const body = await vscode.window.showInputBox({
+        prompt: "Issue body (optional)",
+        placeHolder: "Describe the issue"
+      });
+      const issue = await client.createIssue(repo, { title: title.trim(), body: body ?? "" });
+      await controller.refresh();
+      vscode.window.showInformationMessage(`Created issue #${issue.number} in ${repo}.`);
     }),
     vscode.commands.registerCommand("devToolkit.issues.generateReport", async () => {
       const file = await reports.generateCurrentWeek();

@@ -4,10 +4,23 @@
   "description": "Track deep-work sessions with live dashboard: heatmap, achievements, badges, goals, history & more.",
   "version": "1.0.0",
   "publisher": "devtoolkit",
-  "engines": { "vscode": "^1.90.0" },
-  "categories": ["Other"],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
   "icon": "images/icon.png",
-  "activationEvents": ["onStartupFinished","onView:devToolkit.issueView","onCommand:devToolkit.issues.refresh","onCommand:devToolkit.issues.connectGitHub","onCommand:devToolkit.issues.disconnectGitHub","onCommand:devToolkit.issues.generateReport","onCommand:devToolkit.issues.generateReportLast","onCommand:devToolkit.issues.exportLog"],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:devToolkit.issueView",
+    "onCommand:devToolkit.issues.refresh",
+    "onCommand:devToolkit.issues.connectGitHub",
+    "onCommand:devToolkit.issues.disconnectGitHub",
+    "onCommand:devToolkit.issues.generateReport",
+    "onCommand:devToolkit.issues.generateReportLast",
+    "onCommand:devToolkit.issues.exportLog"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -42,62 +55,149 @@
       }
     ],
     "commands": [
-      { "command": "devToolkit.startSession",         "title": "Session Tracker: Start Session",       "icon": "$(play)" },
-      { "command": "devToolkit.endSession",            "title": "Session Tracker: End Session",         "icon": "$(debug-stop)" },
-      { "command": "devToolkit.openSessionDashboard",  "title": "Session Tracker: Open Dashboard" },
-      { "command": "devToolkit.viewAchievements",      "title": "Session Tracker: View Achievements" },
-      { "command": "devToolkit.viewHistory",           "title": "Session Tracker: View History" },
-      { "command": "devToolkit.addSessionNote",         "title": "Session Tracker: Add Session Note" },
-      { "command": "devToolkit.openJournal",            "title": "Session Tracker: Open Journal" },
-      { "command": "devToolkit.startDeepWorkMode",      "title": "Session Tracker: Start Deep Work Mode" },
-      { "command": "devToolkit.endDeepWorkMode",        "title": "Session Tracker: End Deep Work Mode" },
-      { "command": "devToolkit.exportSessionData",     "title": "Session Tracker: Export Data" },
-      { "command": "devToolkit.resetToday",            "title": "Session Tracker: Reset Today" },
-      { "command": "devToolkit.setDailyGoal",          "title": "Session Tracker: Set Daily Goal" },
-      { "command": "devToolkit.toggleSessionTracking", "title": "Session Tracker: Toggle Tracking" },
-      { "command": "devToolkit.issues.refresh", "title": "Issues: Refresh" },
-      { "command": "devToolkit.issues.connectGitHub", "title": "Issues: Connect GitHub Account" },
-      { "command": "devToolkit.issues.disconnectGitHub", "title": "Issues: Disconnect GitHub Account" },
-      { "command": "devToolkit.issues.newIssue", "title": "Issues: Create New Issue" },
-      { "command": "devToolkit.issues.generateReport", "title": "Issues: Generate Weekly Report" },
-      { "command": "devToolkit.issues.generateReportLast", "title": "Issues: Generate Last Week's Report" },
-      { "command": "devToolkit.issues.exportLog", "title": "Issues: Export Completion Log (JSON/CSV)" }
+      {
+        "command": "devToolkit.startSession",
+        "title": "Session Tracker: Start Session",
+        "icon": "$(play)"
+      },
+      {
+        "command": "devToolkit.endSession",
+        "title": "Session Tracker: End Session",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "devToolkit.openSessionDashboard",
+        "title": "Session Tracker: Open Dashboard"
+      },
+      {
+        "command": "devToolkit.viewAchievements",
+        "title": "Session Tracker: View Achievements"
+      },
+      {
+        "command": "devToolkit.viewHistory",
+        "title": "Session Tracker: View History"
+      },
+      {
+        "command": "devToolkit.addSessionNote",
+        "title": "Session Tracker: Add Session Note"
+      },
+      {
+        "command": "devToolkit.openJournal",
+        "title": "Session Tracker: Open Journal"
+      },
+      {
+        "command": "devToolkit.startDeepWorkMode",
+        "title": "Session Tracker: Start Deep Work Mode"
+      },
+      {
+        "command": "devToolkit.endDeepWorkMode",
+        "title": "Session Tracker: End Deep Work Mode"
+      },
+      {
+        "command": "devToolkit.exportSessionData",
+        "title": "Session Tracker: Export Data"
+      },
+      {
+        "command": "devToolkit.resetToday",
+        "title": "Session Tracker: Reset Today"
+      },
+      {
+        "command": "devToolkit.setDailyGoal",
+        "title": "Session Tracker: Set Daily Goal"
+      },
+      {
+        "command": "devToolkit.toggleSessionTracking",
+        "title": "Session Tracker: Toggle Tracking"
+      },
+      {
+        "command": "devToolkit.issues.refresh",
+        "title": "Issues: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "devToolkit.issues.connectGitHub",
+        "title": "Issues: Connect GitHub Account"
+      },
+      {
+        "command": "devToolkit.issues.disconnectGitHub",
+        "title": "Issues: Disconnect GitHub Account"
+      },
+      {
+        "command": "devToolkit.issues.newIssue",
+        "title": "Issues: Create New Issue"
+      },
+      {
+        "command": "devToolkit.issues.generateReport",
+        "title": "Issues: Generate Weekly Report"
+      },
+      {
+        "command": "devToolkit.issues.generateReportLast",
+        "title": "Issues: Generate Last Week's Report"
+      },
+      {
+        "command": "devToolkit.issues.exportLog",
+        "title": "Issues: Export Completion Log (JSON/CSV)"
+      }
     ],
     "configuration": {
       "title": "Session Tracker",
       "properties": {
         "devToolkit.sessionTracker.dailyGoalMinutes": {
-          "type": "number", "default": 120, "minimum": 15, "maximum": 720,
+          "type": "number",
+          "default": 120,
+          "minimum": 15,
+          "maximum": 720,
           "description": "Daily coding goal in minutes."
         },
         "devToolkit.sessionTracker.idleThresholdMinutes": {
-          "type": "number", "default": 2, "minimum": 1, "maximum": 30,
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 30,
           "description": "Minutes of inactivity before marking as idle."
         },
         "devToolkit.sessionTracker.idleDetection": {
-          "type": "boolean", "default": true,
+          "type": "boolean",
+          "default": true,
           "description": "Enable idle detection."
         },
         "devToolkit.sessionTracker.engagedThresholdSeconds": {
-          "type": "number", "default": 30, "minimum": 5, "maximum": 300,
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 300,
           "description": "Seconds since last activity to count as engaged for efficiency."
         },
         "devToolkit.sessionTracker.flowStateThresholdMinutes": {
-          "type": "number", "default": 25, "minimum": 5, "maximum": 120,
+          "type": "number",
+          "default": 25,
+          "minimum": 5,
+          "maximum": 120,
           "description": "Minutes of continuous focus to enter flow state."
         },
         "devToolkit.sessionTracker.breakReminderInterval": {
-          "type": "number", "default": 45, "minimum": 15, "maximum": 120,
+          "type": "number",
+          "default": 45,
+          "minimum": 15,
+          "maximum": 120,
           "description": "Minutes between break reminders."
         },
         "devToolkit.sessionTracker.statusBarFormat": {
-          "type": "string", "default": "timeAndStreak",
-          "enum": ["timeAndStreak", "timeAndLanguage", "iconOnly"],
+          "type": "string",
+          "default": "timeAndStreak",
+          "enum": [
+            "timeAndStreak",
+            "timeAndLanguage",
+            "iconOnly"
+          ],
           "description": "Status bar display format."
         },
         "devToolkit.sessionTracker.focusScore": {
           "type": "object",
-          "default": { "enabled": true, "showInStatusBar": true },
+          "default": {
+            "enabled": true,
+            "showInStatusBar": true
+          },
           "description": "Focus score configuration."
         },
         "devToolkit.sessionTracker.deepWork": {
@@ -112,26 +212,56 @@
         },
         "devToolkit.sessionTracker.notifications": {
           "type": "object",
-          "default": { "breakReminders": true, "goalReminders": true, "achievementToasts": true },
+          "default": {
+            "breakReminders": true,
+            "goalReminders": true,
+            "achievementToasts": true
+          },
           "description": "Notification preferences."
         }
       }
     },
     "menus": {
       "commandPalette": [
-        { "command": "devToolkit.startSession" },
-        { "command": "devToolkit.endSession" },
-        { "command": "devToolkit.openSessionDashboard" },
-        { "command": "devToolkit.viewAchievements" },
-        { "command": "devToolkit.viewHistory" },
-        { "command": "devToolkit.addSessionNote" },
-        { "command": "devToolkit.openJournal" },
-        { "command": "devToolkit.startDeepWorkMode" },
-        { "command": "devToolkit.endDeepWorkMode" },
-        { "command": "devToolkit.exportSessionData" },
-        { "command": "devToolkit.resetToday" },
-        { "command": "devToolkit.setDailyGoal" },
-        { "command": "devToolkit.toggleSessionTracking" }
+        {
+          "command": "devToolkit.startSession"
+        },
+        {
+          "command": "devToolkit.endSession"
+        },
+        {
+          "command": "devToolkit.openSessionDashboard"
+        },
+        {
+          "command": "devToolkit.viewAchievements"
+        },
+        {
+          "command": "devToolkit.viewHistory"
+        },
+        {
+          "command": "devToolkit.addSessionNote"
+        },
+        {
+          "command": "devToolkit.openJournal"
+        },
+        {
+          "command": "devToolkit.startDeepWorkMode"
+        },
+        {
+          "command": "devToolkit.endDeepWorkMode"
+        },
+        {
+          "command": "devToolkit.exportSessionData"
+        },
+        {
+          "command": "devToolkit.resetToday"
+        },
+        {
+          "command": "devToolkit.setDailyGoal"
+        },
+        {
+          "command": "devToolkit.toggleSessionTracking"
+        }
       ],
       "view/title": [
         {
@@ -146,8 +276,14 @@
         }
       ],
       "devToolkit.sessionNotesMenu": [
-        { "command": "devToolkit.addSessionNote", "group": "1_notes" },
-        { "command": "devToolkit.openJournal", "group": "1_notes" }
+        {
+          "command": "devToolkit.addSessionNote",
+          "group": "1_notes"
+        },
+        {
+          "command": "devToolkit.openJournal",
+          "group": "1_notes"
+        }
       ]
     }
   },
@@ -159,7 +295,8 @@
     "package": "vsce package"
   },
   "dependencies": {
-    "@vscode/codicons": "0.0.36"
+    "@vscode/codicons": "0.0.36",
+    "markdown-it": "^14.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

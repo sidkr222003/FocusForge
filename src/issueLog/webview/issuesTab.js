@@ -9,10 +9,19 @@ const state = {
   issue: null,
   labels: [],
   editedLabels: [],
-  assignees: []
+  assignees: [],
+  canEdit: false,
+  canComment: false,
+  isAuthenticated: false,
+  repoOptions: new Map()
 };
 
 const el = (id) => document.getElementById(id);
+const markdown = window.markdownit?.({
+  html: false,
+  linkify: true,
+  breaks: true
+});
 
 function escapeHtml(s) {
   return String(s)
@@ -31,19 +40,37 @@ function relative(iso) {
   return `${Math.round(mins / 1440)}d ago`;
 }
 
+function renderMarkdown(text) {
+  const value = String(text || '').trim();
+  if (!value) {
+    return '<p class="empty-copy">No description provided.</p>';
+  }
+  return markdown ? markdown.render(value) : `<p>${escapeHtml(value)}</p>`;
+}
+
 function renderIssues(list) {
   const html = list
     .map((issue) => {
       const labels = issue.labels
-        .map((l) => `<span class="label" style="background:#${l.color}22;color:#${l.color}">${escapeHtml(l.name)}</span>`)
+        .slice(0, 4)
+        .map((l) => `<span class="label" style="--label-color:#${l.color}">${escapeHtml(l.name)}</span>`)
         .join('');
+      const extraLabels = issue.labels.length > 4 ? `<span class="label label-muted">+${issue.labels.length - 4}</span>` : '';
       return `<button class="issue-row" data-number="${issue.number}">
-        <div class="issue-title">#${issue.number} - ${escapeHtml(issue.title)}</div>
-        <div class="issue-meta">${labels} ${relative(issue.createdAt)} | ${issue.state} | comments ${issue.comments}</div>
+        <span class="codicon codicon-issue-${issue.state === 'open' ? 'opened' : 'closed'} issue-state-icon"></span>
+        <span class="issue-content">
+          <span class="issue-title">#${issue.number} ${escapeHtml(issue.title)}</span>
+          <span class="issue-meta">
+            <span>${relative(issue.createdAt)}</span>
+            <span>${issue.state}</span>
+            <span>${issue.comments} comments</span>
+          </span>
+          <span class="issue-labels">${labels}${extraLabels}</span>
+        </span>
       </button>`;
     })
     .join('');
-  el('issuesList').innerHTML = html || '<div class="hint">No issues found.</div>';
+  el('issuesList').innerHTML = html || '<div class="empty-state"><span class="codicon codicon-issues"></span><strong>No issues found</strong><span>Try another state, label, or repository.</span></div>';
   document.querySelectorAll('.issue-row').forEach((row) => {
     row.addEventListener('click', () => {
       const number = Number(row.getAttribute('data-number'));
@@ -53,20 +80,50 @@ function renderIssues(list) {
   });
 }
 
+function renderRepos(repos, selectedRepo = state.repo, repoOptions = []) {
+  state.repoOptions = new Map((repoOptions || []).map((repo) => [repo.slug, repo]));
+  const repoValues = (repos || []).map((repo) => typeof repo === 'string' ? repo : repo.slug).filter(Boolean);
+  const uniqueRepos = Array.from(new Set([selectedRepo, ...repoValues].filter(Boolean)));
+  state.repo = selectedRepo || '';
+  el('repoSelect').innerHTML = uniqueRepos.length
+    ? `${state.repo ? '' : '<option value="">Select detected repo...</option>'}${uniqueRepos
+        .map((repo) => {
+          const option = state.repoOptions.get(repo);
+          const label = option?.folder ? `${repo} — ${option.folder}` : repo;
+          return `<option value="${escapeHtml(repo)}" ${repo === state.repo ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+        })
+        .join('')}`
+    : '<option value="">No repository detected</option>';
+  renderRepoHint(uniqueRepos);
+}
+
+function renderRepoHint(repos = []) {
+  if (!state.repo) {
+    el('repoHint').textContent = 'Open a GitHub-backed workspace or connect GitHub to choose a repository.';
+    return;
+  }
+  const option = state.repoOptions.get(state.repo);
+  const folder = option?.folder ? ` · ${option.folder}` : '';
+  const source = option?.remote ? ` · ${option.remote}` : repos.includes(state.repo) ? ' · detected/account' : '';
+  el('repoHint').textContent = `${state.repo}${source}${folder}`;
+}
+
 function renderIssueDetail(issue) {
   state.issue = issue;
   el('listView').classList.add('hidden');
   el('detailView').classList.remove('hidden');
-  el('detailTitle').textContent = `#${issue.number} - ${issue.title}`;
+  el('detailTitle').textContent = issue.title;
+  el('detailNumber').textContent = `#${issue.number}`;
   el('titleInput').value = issue.title;
   el('bodyInput').value = issue.body || '';
-  el('detailBody').textContent = issue.body || '(no description)';
-  el('detailMeta').textContent = `${issue.state.toUpperCase()} | opened ${new Date(issue.createdAt).toLocaleString()} | updated ${new Date(issue.updatedAt).toLocaleString()}`;
-  el('closeIssueBtn').classList.toggle('hidden', issue.state !== 'open');
-  el('reopenIssueBtn').classList.toggle('hidden', issue.state === 'open');
+  el('detailBody').innerHTML = renderMarkdown(issue.body);
+  el('detailMeta').innerHTML = `<span class="status-pill ${issue.state === 'open' ? 'status-open' : 'status-closed'}">${issue.state}</span><span>Opened ${new Date(issue.createdAt).toLocaleString()}</span><span>Updated ${relative(issue.updatedAt)}</span>`;
+  el('closeIssueBtn').classList.toggle('hidden', !state.canEdit || issue.state !== 'open');
+  el('reopenIssueBtn').classList.toggle('hidden', !state.canEdit || issue.state === 'open');
   state.editedLabels = issue.labels.map((l) => l.name);
   renderCurrentLabels();
   renderCurrentAssignees();
+  applyAccess();
   initTimePicker();
 }
 
@@ -77,7 +134,7 @@ function renderCurrentLabels() {
     .map((label) => {
       const full = state.labels.find((l) => l.name === label);
       const color = full ? full.color : '888888';
-      return `<span class="label" style="background:#${color}22;color:#${color}">${escapeHtml(label)}</span>`;
+      return `<span class="label" style="--label-color:#${color}">${escapeHtml(label)}</span>`;
     })
     .join('');
 }
@@ -85,18 +142,37 @@ function renderCurrentLabels() {
 function renderCurrentAssignees() {
   if (!state.issue) return;
   const names = state.issue.assignees.map((a) => a.login);
-  el('currentAssignees').innerHTML = names.length ? names.map((n) => `<span class="label">${escapeHtml(n)}</span>`).join('') : '<span class="hint">Unassigned</span>';
+  el('currentAssignees').innerHTML = names.length ? names.map((n) => `<span class="assignee-pill">${escapeHtml(n)}</span>`).join('') : '<span class="hint">Unassigned</span>';
 }
 
 function renderComments(comments) {
-  el('conversation').innerHTML = comments
+  el('conversation').innerHTML = comments.length ? comments
     .map(
       (c) => `<div class="comment">
       <div class="comment-head"><img class="avatar" src="${c.author.avatarUrl}" /> ${escapeHtml(c.author.login)} <span>${new Date(c.createdAt).toLocaleString()}</span></div>
-      <div>${escapeHtml(c.body)}</div>
+      <div class="markdown-body">${renderMarkdown(c.body)}</div>
     </div>`
     )
-    .join('');
+    .join('') : '<div class="hint">No comments yet.</div>';
+}
+
+function applyAccess() {
+  document.querySelectorAll('.edit-control').forEach((node) => node.classList.toggle('hidden', !state.canEdit));
+  el('commentInput').disabled = !state.canComment;
+  el('commentInput').placeholder = state.canComment ? 'Leave a comment...' : 'Connect GitHub to comment on this issue...';
+  el('commentBtn').classList.toggle('hidden', !state.canComment);
+  el('workOnIssueBtn').classList.toggle('hidden', !state.canComment);
+  el('connectForCommentBtn').classList.toggle('hidden', state.canComment);
+
+  if (state.issue) {
+    el('closeIssueBtn').classList.toggle('hidden', !state.canEdit || state.issue.state !== 'open');
+    el('reopenIssueBtn').classList.toggle('hidden', !state.canEdit || state.issue.state === 'open');
+  }
+}
+
+function renderGitStatus(status) {
+  const shouldShow = status && !status.active;
+  el('gitBanner').classList.toggle('hidden', !shouldShow);
 }
 
 function addBullet(value = '') {
@@ -151,7 +227,7 @@ window.addEventListener('message', (event) => {
   switch (msg.type) {
     case 'boot':
       state.repo = msg.repo || '';
-      el('repoSelect').innerHTML = `<option value="${state.repo}">${state.repo || 'No repository detected'}</option>`;
+      renderRepos([], state.repo);
       if (msg.showAuthBanner) {
         el('authBanner').classList.remove('hidden');
         // Show connect button initially; token form will be revealed on click
@@ -180,6 +256,21 @@ window.addEventListener('message', (event) => {
         el('authBanner').classList.add('hidden');
       }
       break;
+    case 'gitStatus':
+      renderGitStatus(msg.status);
+      break;
+    case 'repoAccess':
+      state.canEdit = Boolean(msg.access?.canEdit);
+      state.canComment = Boolean(msg.access?.canComment);
+      state.isAuthenticated = Boolean(msg.access?.isAuthenticated);
+      applyAccess();
+      break;
+    case 'reposLoaded':
+      renderRepos(msg.repos || [], msg.selectedRepo || state.repo, msg.repoOptions || []);
+      break;
+    case 'repoListError':
+      renderRepos([], state.repo);
+      break;
     case 'authUpdated':
       // Hide auth banner after successful authentication
       if (!msg.showAuthBanner) {
@@ -190,6 +281,7 @@ window.addEventListener('message', (event) => {
       break;
     case 'issuesLoaded':
       state.repo = msg.repo;
+      renderRepoHint();
       state.page = msg.page;
       state.hasMore = msg.hasMore;
       state.issues = msg.page === 1 ? msg.issues : [...state.issues, ...msg.issues];
@@ -215,6 +307,14 @@ window.addEventListener('message', (event) => {
       renderIssueDetail(msg.issue);
       vscode.postMessage({ type: 'loadIssues', repo: state.repo, state: el('stateFilter').value, labels: el('labelsFilter').value, page: 1 });
       break;
+    case 'issueCreated':
+      el('newIssueForm').classList.add('hidden');
+      el('newIssueTitle').value = '';
+      el('newIssueBody').value = '';
+      el('newIssueLabels').value = '';
+      renderIssueDetail(msg.issue);
+      vscode.postMessage({ type: 'loadComments', number: msg.issue.number });
+      break;
     case 'labelsLoaded':
       state.labels = msg.labels;
       break;
@@ -237,7 +337,11 @@ window.addEventListener('message', (event) => {
     case 'reportGenerated':
       el('weeklyReportOutput').innerHTML = `<div class="hint">Report generated: <a href="${escapeHtml(String(msg.file))}">${escapeHtml(String(msg.file))}</a></div>`;
       break;
+    case 'toast':
+      el('repoHint').textContent = msg.message || '';
+      break;
     case 'error':
+      el('repoHint').textContent = '';
       el('issuesList').innerHTML = `<div class="hint">${escapeHtml(msg.message)}</div>`;
       break;
   }
@@ -251,6 +355,15 @@ el('labelsFilter').addEventListener('change', () => {
   vscode.postMessage({ type: 'loadIssues', repo: state.repo, state: el('stateFilter').value, labels: el('labelsFilter').value, page: 1 });
 });
 
+el('repoSelect').addEventListener('change', () => {
+  state.repo = el('repoSelect').value;
+  if (!state.repo) return;
+  state.issues = [];
+  state.filteredIssues = [];
+  el('issuesList').innerHTML = '<div class="hint">Loading issues...</div>';
+  vscode.postMessage({ type: 'loadIssues', repo: state.repo, state: el('stateFilter').value, labels: el('labelsFilter').value, page: 1 });
+});
+
 el('searchInput').addEventListener('input', () => {
   vscode.postMessage({ type: 'searchIssues', query: el('searchInput').value });
 });
@@ -259,13 +372,48 @@ el('loadMoreBtn').addEventListener('click', () => {
   vscode.postMessage({ type: 'loadIssues', repo: state.repo, state: el('stateFilter').value, labels: el('labelsFilter').value, page: state.page + 1 });
 });
 
-el('newIssueBtn').addEventListener('click', () => vscode.postMessage({ type: 'newIssue' }));
+el('newIssueBtn').addEventListener('click', () => {
+  if (state.isAuthenticated) {
+    el('newIssueForm').classList.toggle('hidden');
+    el('newIssueTitle').focus();
+    return;
+  }
+  vscode.postMessage({ type: 'newIssue' });
+});
+el('cancelCreateIssueBtn').addEventListener('click', () => el('newIssueForm').classList.add('hidden'));
+el('createIssueBtn').addEventListener('click', () => {
+  const title = el('newIssueTitle').value.trim();
+  if (!title) {
+    el('newIssueTitle').focus();
+    return;
+  }
+  vscode.postMessage({
+    type: 'createIssue',
+    title,
+    body: el('newIssueBody').value,
+    labels: el('newIssueLabels').value
+  });
+});
+el('openIssueBtn').addEventListener('click', () => {
+  if (!state.issue) return;
+  vscode.postMessage({ type: 'openIssueExternal', number: state.issue.number });
+});
+el('copyIssueBtn').addEventListener('click', () => {
+  if (!state.issue) return;
+  vscode.postMessage({ type: 'copyIssueLink', number: state.issue.number });
+});
+el('activateGitBtn').addEventListener('click', () => vscode.postMessage({ type: 'activateGit' }));
+el('connectForCommentBtn').addEventListener('click', () => {
+  el('authBanner').classList.remove('hidden');
+  el('connectBtn').click();
+});
 el('backBtn').addEventListener('click', () => {
   el('detailView').classList.add('hidden');
   el('listView').classList.remove('hidden');
 });
 
 el('detailTitle').addEventListener('dblclick', () => {
+  if (!state.canEdit) return;
   el('titleInput').classList.remove('hidden');
   el('detailTitle').classList.add('hidden');
   el('titleInput').focus();
@@ -281,6 +429,7 @@ el('titleInput').addEventListener('blur', () => {
 });
 
 el('detailBody').addEventListener('dblclick', () => {
+  if (!state.canEdit) return;
   el('bodyInput').classList.remove('hidden');
   el('detailBody').classList.add('hidden');
   el('bodyInput').focus();
@@ -291,6 +440,7 @@ el('bodyInput').addEventListener('blur', () => {
   vscode.postMessage({ type: 'updateBody', number: state.issue.number, body: el('bodyInput').value });
   el('detailBody').classList.remove('hidden');
   el('bodyInput').classList.add('hidden');
+  el('detailBody').innerHTML = renderMarkdown(el('bodyInput').value);
 });
 
 el('editLabelsBtn').addEventListener('click', () => {
@@ -322,6 +472,15 @@ el('commentBtn').addEventListener('click', () => {
   const body = el('commentInput').value.trim();
   if (!body) return;
   vscode.postMessage({ type: 'postComment', number: state.issue.number, body });
+});
+
+el('workOnIssueBtn').addEventListener('click', () => {
+  if (!state.issue || !state.canComment) return;
+  vscode.postMessage({
+    type: 'postComment',
+    number: state.issue.number,
+    body: 'I would like to work on this issue.'
+  });
 });
 
 el('closeIssueBtn').addEventListener('click', () => {

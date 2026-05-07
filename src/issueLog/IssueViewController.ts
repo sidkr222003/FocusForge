@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { readFileSync } from 'node:fs';
-import { GitHubClient } from './GitHubClient';
+import { GitHubClient, RepoCandidate } from './GitHubClient';
 import { IssueStore } from './IssueStore';
 import { WeeklyReportGenerator } from '../weeklyReport/WeeklyReportGenerator';
 import { GitHubIssue, IssueCompletionLog } from './types';
@@ -29,7 +29,8 @@ export class IssueViewController implements vscode.WebviewViewProvider {
       enableScripts: true,
       localResourceRoots: [
         vscode.Uri.joinPath(this.ctx.extensionUri, 'src', 'issueLog', 'webview'),
-        vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist')
+        vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist'),
+        vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', 'markdown-it', 'dist')
       ]
     };
     webview.html = this.renderHtml(webview);
@@ -38,7 +39,8 @@ export class IssueViewController implements vscode.WebviewViewProvider {
   }
 
   async refresh(): Promise<void> {
-    await this.loadIssues(1);
+    this.client.invalidateCache();
+    await this.bootstrap();
   }
 
   private async onMessage(msg: ViewMessage): Promise<void> {
@@ -53,11 +55,17 @@ export class IssueViewController implements vscode.WebviewViewProvider {
           break;
         }
         case 'loadIssues': {
+          const nextRepo = String(msg.repo ?? this.repo ?? '').trim();
+          const previousRepo = this.repo;
           await this.loadIssues(Number(msg.page ?? 1), {
-            repo: String(msg.repo ?? this.repo ?? ''),
+            repo: nextRepo,
             state: msg.state as 'open' | 'closed' | 'all',
             labels: String(msg.labels ?? '')
           });
+          if (nextRepo && nextRepo !== previousRepo) {
+            await this.loadRepoMetadata(nextRepo);
+            await this.postAccess(nextRepo);
+          }
           break;
         }
         case 'searchIssues': {
@@ -84,6 +92,34 @@ export class IssueViewController implements vscode.WebviewViewProvider {
         case 'postComment': {
           const comment = await this.client.addComment(this.requiredRepo(), Number(msg.number), String(msg.body ?? ''));
           await this.post({ type: 'commentPosted', comment });
+          break;
+        }
+        case 'createIssue': {
+          const title = String(msg.title ?? '').trim();
+          if (!title) {
+            throw new Error('Issue title is required.');
+          }
+          const labels = String(msg.labels ?? '')
+            .split(',')
+            .map((label) => label.trim())
+            .filter(Boolean);
+          const issue = await this.client.createIssue(this.requiredRepo(), {
+            title,
+            body: String(msg.body ?? ''),
+            labels
+          });
+          this.client.invalidateCache();
+          await this.post({ type: 'issueCreated', issue });
+          await this.loadIssues(1);
+          break;
+        }
+        case 'openIssueExternal': {
+          await vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${this.requiredRepo()}/issues/${Number(msg.number)}`));
+          break;
+        }
+        case 'copyIssueLink': {
+          await vscode.env.clipboard.writeText(`https://github.com/${this.requiredRepo()}/issues/${Number(msg.number)}`);
+          await this.post({ type: 'toast', message: 'Issue link copied.' });
           break;
         }
         case 'updateTitle': {
@@ -134,13 +170,20 @@ export class IssueViewController implements vscode.WebviewViewProvider {
           await this.openTokenCreationPage();
           break;
         }
+        case 'activateGit': {
+          const status = await GitHubClient.activateGitExtension();
+          this.client.invalidateCache();
+          await this.post({ type: 'gitStatus', status });
+          await this.bootstrap();
+          break;
+        }
         case 'submitToken': {
           const token = String(msg.token ?? '').trim();
           if (!token) {
             throw new Error('Token is required.');
           }
           await this.store.setToken(token);
-          await this.refresh();
+          await this.bootstrap();
           await this.post({ type: 'authUpdated', showAuthBanner: false });
           break;
         }
@@ -186,7 +229,7 @@ export class IssueViewController implements vscode.WebviewViewProvider {
       return;
     }
     await this.store.setToken(token.trim());
-    await this.refresh();
+    await this.bootstrap();
     await this.post({ type: 'authUpdated', showAuthBanner: false });
   }
 
@@ -197,7 +240,10 @@ export class IssueViewController implements vscode.WebviewViewProvider {
   }
 
   private async bootstrap(): Promise<void> {
-    const detected = (await GitHubClient.detectRepo()) ?? this.store.getLastRepo();
+    await this.post({ type: 'gitStatus', status: GitHubClient.getGitExtensionStatus() });
+    const detectedRepoOptions = await GitHubClient.detectRepoCandidates();
+    const detectedRepos = detectedRepoOptions.map((repo) => repo.slug);
+    const detected = detectedRepoOptions[0]?.slug;
     this.repo = detected;
     if (detected) {
       await this.store.setLastRepo(detected);
@@ -205,14 +251,68 @@ export class IssueViewController implements vscode.WebviewViewProvider {
 
     const token = await this.store.getToken();
     await this.post({ type: 'boot', repo: this.repo ?? '', showAuthBanner: !token });
-    if (!token || !this.repo) {
+
+    const repos = token ? await this.loadRepositories(this.repo, detectedRepoOptions) : [...new Set(detectedRepos)];
+    if (!token) {
+      await this.post({
+        type: 'reposLoaded',
+        repos,
+        repoOptions: detectedRepoOptions,
+        selectedRepo: this.repo ?? repos[0] ?? ''
+      });
+    }
+    if (!this.repo) {
+      await this.post({
+        type: 'error',
+        message: 'No local GitHub repo detected. Open a file inside the cloned repo or select a repo from the dropdown.'
+      });
       return;
     }
-    const labels = await this.client.listLabels(this.repo);
-    const assignees = await this.client.listAssignees(this.repo);
+    await this.postAccess(this.repo);
+    await this.loadRepoMetadata(this.repo);
+    await this.loadIssues(1);
+  }
+
+  private async loadRepositories(selectedRepo?: string, localRepos: RepoCandidate[] = []): Promise<string[]> {
+    const repos = new Set<string>();
+    const repoOptions = new Map<string, RepoCandidate>();
+    if (selectedRepo) {
+      repos.add(selectedRepo);
+    }
+    for (const repo of localRepos) {
+      repos.add(repo.slug);
+      repoOptions.set(repo.slug, repo);
+    }
+    try {
+      for (const repo of await this.client.listRepositories()) {
+        repos.add(repo);
+      }
+    } catch (error) {
+      await this.post({
+        type: 'repoListError',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+    const orderedRepos = [...repos];
+    await this.post({
+      type: 'reposLoaded',
+      repos: orderedRepos,
+      repoOptions: [...repoOptions.values()],
+      selectedRepo: selectedRepo ?? ''
+    });
+    return orderedRepos;
+  }
+
+  private async loadRepoMetadata(repo: string): Promise<void> {
+    const labels = await this.client.listLabels(repo).catch(() => []);
+    const assignees = await this.client.listAssignees(repo).catch(() => []);
     await this.post({ type: 'labelsLoaded', labels });
     await this.post({ type: 'assigneesLoaded', assignees });
-    await this.loadIssues(1);
+  }
+
+  private async postAccess(repo: string): Promise<void> {
+    const access = await this.client.getRepoAccess(repo);
+    await this.post({ type: 'repoAccess', access });
   }
 
   private async loadIssues(
@@ -255,6 +355,9 @@ export class IssueViewController implements vscode.WebviewViewProvider {
     const htmlPath = vscode.Uri.joinPath(root, 'issuesTab.html');
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(root, 'issuesTab.css'));
     const jsUri = webview.asWebviewUri(vscode.Uri.joinPath(root, 'issuesTab.js'));
+    const markdownItUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', 'markdown-it', 'dist', 'markdown-it.min.js')
+    );
     const codiconUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.css')
     );
@@ -262,7 +365,9 @@ export class IssueViewController implements vscode.WebviewViewProvider {
     const html = readFileSync(htmlPath.fsPath, 'utf8');
     return html
       .replace(/__NONCE__/g, nonce)
+      .replace(/__CSP_SOURCE__/g, webview.cspSource)
       .replace('__CSS__', cssUri.toString())
+      .replace('__MARKDOWN_IT__', markdownItUri.toString())
       .replace('__JS__', jsUri.toString())
       .replace('__CODICON__', codiconUri.toString());
   }

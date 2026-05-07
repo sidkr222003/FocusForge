@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'nonce-__NONCE__'; script-src 'nonce-__NONCE__';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; font-src __CSP_SOURCE__; style-src __CSP_SOURCE__ 'unsafe-inline'; script-src __CSP_SOURCE__ 'nonce-__NONCE__';" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link nonce="__NONCE__" rel="stylesheet" href="__CODICON__" />
   <link nonce="__NONCE__" rel="stylesheet" href="__CSS__" />
@@ -21,11 +21,19 @@
   </div>
 
   <section class="panel" id="issuesPanel">
+    <div id="gitBanner" class="notice-banner hidden">
+      <div>
+        <div class="notice-title"><span class="codicon codicon-source-control"></span> Git extension inactive</div>
+        <div class="notice-copy">Activate Git integration to improve repository detection.</div>
+      </div>
+      <button id="activateGitBtn" class="secondary-btn"><span class="codicon codicon-debug-start"></span> Activate</button>
+    </div>
+
     <div id="authBanner" class="auth-banner hidden">
       <div class="auth-left">
-        <div class="auth-title"><span class="codicon codicon-github"></span> GitHub connection required</div>
+        <div class="auth-title"><span class="codicon codicon-github"></span> Connect GitHub</div>
         <div class="auth-subtitle">
-          Sign in to load issues and save completion logs.
+          Public issues can load read-only. Connect to comment, create issues, or edit repos you can maintain.
         </div>
       </div>
 
@@ -53,6 +61,23 @@
       <button id="newIssueBtn" class="icon-btn" title="New issue"><span class="codicon codicon-plus"></span></button>
     </div>
 
+    <div id="newIssueForm" class="create-issue hidden">
+      <div class="field-row">
+        <label for="newIssueTitle">New issue</label>
+        <input id="newIssueTitle" placeholder="Issue title" />
+      </div>
+      <div class="field-row">
+        <textarea id="newIssueBody" placeholder="Describe the issue..."></textarea>
+      </div>
+      <div class="field-row">
+        <input id="newIssueLabels" placeholder="labels: bug,help wanted" />
+      </div>
+      <div class="form-actions">
+        <button id="createIssueBtn" class="primary-btn"><span class="codicon codicon-check"></span> Create issue</button>
+        <button id="cancelCreateIssueBtn" class="secondary-btn">Cancel</button>
+      </div>
+    </div>
+
     <div class="search-row">
       <span class="codicon codicon-search"></span>
       <input id="searchInput" type="search" placeholder="Search issues..." />
@@ -66,6 +91,7 @@
       </select>
       <input id="labelsFilter" placeholder="labels: bug,high" />
     </div>
+    <div id="repoHint" class="repo-hint"></div>
 
     <div id="listView">
       <div id="issuesList" class="issues-list"></div>
@@ -74,31 +100,42 @@
 
     <div id="detailView" class="hidden">
       <button id="backBtn" class="back-btn"><span class="codicon codicon-arrow-left"></span> Back</button>
-      <h2 id="detailTitle" class="issue-title"></h2>
+      <div class="detail-header">
+        <span id="detailNumber" class="detail-number"></span>
+        <h2 id="detailTitle" class="detail-title"></h2>
+        <div class="detail-tools">
+          <button id="openIssueBtn" class="secondary-btn"><span class="codicon codicon-github"></span> Open</button>
+          <button id="copyIssueBtn" class="secondary-btn"><span class="codicon codicon-link"></span> Copy link</button>
+        </div>
+      </div>
       <input id="titleInput" class="text-input hidden" />
       <div class="meta-row" id="detailMeta"></div>
       <textarea id="bodyInput" class="body-edit hidden"></textarea>
-      <div id="detailBody" class="issue-body"></div>
+      <div id="detailBody" class="issue-body markdown-body"></div>
 
       <div class="section-title"><span class="codicon codicon-tag"></span> Labels</div>
       <div class="labels-editor">
         <div id="currentLabels"></div>
-        <button id="editLabelsBtn" class="secondary-btn"><span class="codicon codicon-pencil"></span> Edit labels</button>
-        <button id="saveLabelsBtn" class="secondary-btn hidden"><span class="codicon codicon-check"></span> Save labels</button>
+        <button id="editLabelsBtn" class="secondary-btn edit-control"><span class="codicon codicon-pencil"></span> Edit labels</button>
+        <button id="saveLabelsBtn" class="secondary-btn hidden edit-control"><span class="codicon codicon-check"></span> Save labels</button>
         <div id="labelsPicker" class="dropdown hidden"></div>
       </div>
 
       <div class="section-title"><span class="codicon codicon-mention"></span> Assignees</div>
       <div class="field-row">
-        <select id="assigneeSelect"></select>
-        <button id="addAssigneeBtn" class="secondary-btn"><span class="codicon codicon-plus"></span> Add assignee</button>
+        <select id="assigneeSelect" class="edit-control"></select>
+        <button id="addAssigneeBtn" class="secondary-btn edit-control"><span class="codicon codicon-plus"></span> Add assignee</button>
         <div id="currentAssignees"></div>
       </div>
 
       <div class="section-title"><span class="codicon codicon-comment-discussion"></span> Conversation</div>
       <div id="conversation" class="conversation"></div>
       <textarea id="commentInput" placeholder="Leave a comment..."></textarea>
-      <button id="commentBtn" class="primary-btn"><span class="codicon codicon-comment"></span> Comment</button>
+      <div class="comment-actions">
+        <button id="workOnIssueBtn" class="secondary-btn"><span class="codicon codicon-person-add"></span> I'll work on this</button>
+        <button id="commentBtn" class="primary-btn"><span class="codicon codicon-comment"></span> Comment</button>
+        <button id="connectForCommentBtn" class="secondary-btn hidden"><span class="codicon codicon-github"></span> Connect to comment</button>
+      </div>
 
       <div class="section-title"><span class="codicon codicon-checklist"></span> Log completion</div>
       <div id="logBadge" class="log-badge hidden"><span class="codicon codicon-check"></span> Logged</div>
@@ -134,11 +171,10 @@
         <label>Mood (1-5)</label>
         <input id="moodInput" min="1" max="5" type="number" />
       </div>
-      <button id="saveLogBtn" class="primary-btn"><span class="codicon codicon-check"></span> Save completion log</button>
-
       <div class="actions-row">
-        <button id="closeIssueBtn" class="danger-btn"><span class="codicon codicon-issue-closed"></span> Close issue</button>
-        <button id="reopenIssueBtn" class="success-btn hidden"><span class="codicon codicon-issue-reopened"></span> Reopen issue</button>
+        <button id="saveLogBtn" class="primary-btn"><span class="codicon codicon-check"></span> Save completion log</button>
+        <button id="closeIssueBtn" class="danger-btn edit-control"><span class="codicon codicon-issue-closed"></span> Close issue</button>
+        <button id="reopenIssueBtn" class="success-btn hidden edit-control"><span class="codicon codicon-issue-reopened"></span> Reopen issue</button>
       </div>
     </div>
   </section>
@@ -155,6 +191,7 @@
     </div>
   </section>
 
+  <script nonce="__NONCE__" src="__MARKDOWN_IT__"></script>
   <script nonce="__NONCE__" src="__JS__"></script>
 </body>
 </html>

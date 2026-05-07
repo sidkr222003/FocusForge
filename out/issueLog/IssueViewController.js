@@ -52,14 +52,16 @@ class IssueViewController {
             enableScripts: true,
             localResourceRoots: [
                 vscode.Uri.joinPath(this.ctx.extensionUri, 'src', 'issueLog', 'webview'),
-                vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist')
+                vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist'),
+                vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', 'markdown-it', 'dist')
             ]
         };
         webview.html = this.renderHtml(webview);
         webview.onDidReceiveMessage((msg) => this.onMessage(msg), undefined, this.ctx.subscriptions);
     }
     async refresh() {
-        await this.loadIssues(1);
+        this.client.invalidateCache();
+        await this.bootstrap();
     }
     async onMessage(msg) {
         if (!this.view) {
@@ -72,11 +74,17 @@ class IssueViewController {
                     break;
                 }
                 case 'loadIssues': {
+                    const nextRepo = String(msg.repo ?? this.repo ?? '').trim();
+                    const previousRepo = this.repo;
                     await this.loadIssues(Number(msg.page ?? 1), {
-                        repo: String(msg.repo ?? this.repo ?? ''),
+                        repo: nextRepo,
                         state: msg.state,
                         labels: String(msg.labels ?? '')
                     });
+                    if (nextRepo && nextRepo !== previousRepo) {
+                        await this.loadRepoMetadata(nextRepo);
+                        await this.postAccess(nextRepo);
+                    }
                     break;
                 }
                 case 'searchIssues': {
@@ -101,6 +109,34 @@ class IssueViewController {
                 case 'postComment': {
                     const comment = await this.client.addComment(this.requiredRepo(), Number(msg.number), String(msg.body ?? ''));
                     await this.post({ type: 'commentPosted', comment });
+                    break;
+                }
+                case 'createIssue': {
+                    const title = String(msg.title ?? '').trim();
+                    if (!title) {
+                        throw new Error('Issue title is required.');
+                    }
+                    const labels = String(msg.labels ?? '')
+                        .split(',')
+                        .map((label) => label.trim())
+                        .filter(Boolean);
+                    const issue = await this.client.createIssue(this.requiredRepo(), {
+                        title,
+                        body: String(msg.body ?? ''),
+                        labels
+                    });
+                    this.client.invalidateCache();
+                    await this.post({ type: 'issueCreated', issue });
+                    await this.loadIssues(1);
+                    break;
+                }
+                case 'openIssueExternal': {
+                    await vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${this.requiredRepo()}/issues/${Number(msg.number)}`));
+                    break;
+                }
+                case 'copyIssueLink': {
+                    await vscode.env.clipboard.writeText(`https://github.com/${this.requiredRepo()}/issues/${Number(msg.number)}`);
+                    await this.post({ type: 'toast', message: 'Issue link copied.' });
                     break;
                 }
                 case 'updateTitle': {
@@ -151,13 +187,20 @@ class IssueViewController {
                     await this.openTokenCreationPage();
                     break;
                 }
+                case 'activateGit': {
+                    const status = await GitHubClient_1.GitHubClient.activateGitExtension();
+                    this.client.invalidateCache();
+                    await this.post({ type: 'gitStatus', status });
+                    await this.bootstrap();
+                    break;
+                }
                 case 'submitToken': {
                     const token = String(msg.token ?? '').trim();
                     if (!token) {
                         throw new Error('Token is required.');
                     }
                     await this.store.setToken(token);
-                    await this.refresh();
+                    await this.bootstrap();
                     await this.post({ type: 'authUpdated', showAuthBanner: false });
                     break;
                 }
@@ -201,28 +244,82 @@ class IssueViewController {
             return;
         }
         await this.store.setToken(token.trim());
-        await this.refresh();
+        await this.bootstrap();
         await this.post({ type: 'authUpdated', showAuthBanner: false });
     }
     async openTokenCreationPage() {
         await vscode.env.openExternal(vscode.Uri.parse('https://github.com/settings/tokens/new?scopes=repo&description=VSCode+Session+Tracker'));
     }
     async bootstrap() {
-        const detected = (await GitHubClient_1.GitHubClient.detectRepo()) ?? this.store.getLastRepo();
+        await this.post({ type: 'gitStatus', status: GitHubClient_1.GitHubClient.getGitExtensionStatus() });
+        const detectedRepoOptions = await GitHubClient_1.GitHubClient.detectRepoCandidates();
+        const detectedRepos = detectedRepoOptions.map((repo) => repo.slug);
+        const detected = detectedRepoOptions[0]?.slug;
         this.repo = detected;
         if (detected) {
             await this.store.setLastRepo(detected);
         }
         const token = await this.store.getToken();
         await this.post({ type: 'boot', repo: this.repo ?? '', showAuthBanner: !token });
-        if (!token || !this.repo) {
+        const repos = token ? await this.loadRepositories(this.repo, detectedRepoOptions) : [...new Set(detectedRepos)];
+        if (!token) {
+            await this.post({
+                type: 'reposLoaded',
+                repos,
+                repoOptions: detectedRepoOptions,
+                selectedRepo: this.repo ?? repos[0] ?? ''
+            });
+        }
+        if (!this.repo) {
+            await this.post({
+                type: 'error',
+                message: 'No local GitHub repo detected. Open a file inside the cloned repo or select a repo from the dropdown.'
+            });
             return;
         }
-        const labels = await this.client.listLabels(this.repo);
-        const assignees = await this.client.listAssignees(this.repo);
+        await this.postAccess(this.repo);
+        await this.loadRepoMetadata(this.repo);
+        await this.loadIssues(1);
+    }
+    async loadRepositories(selectedRepo, localRepos = []) {
+        const repos = new Set();
+        const repoOptions = new Map();
+        if (selectedRepo) {
+            repos.add(selectedRepo);
+        }
+        for (const repo of localRepos) {
+            repos.add(repo.slug);
+            repoOptions.set(repo.slug, repo);
+        }
+        try {
+            for (const repo of await this.client.listRepositories()) {
+                repos.add(repo);
+            }
+        }
+        catch (error) {
+            await this.post({
+                type: 'repoListError',
+                message: error instanceof Error ? error.message : String(error)
+            });
+        }
+        const orderedRepos = [...repos];
+        await this.post({
+            type: 'reposLoaded',
+            repos: orderedRepos,
+            repoOptions: [...repoOptions.values()],
+            selectedRepo: selectedRepo ?? ''
+        });
+        return orderedRepos;
+    }
+    async loadRepoMetadata(repo) {
+        const labels = await this.client.listLabels(repo).catch(() => []);
+        const assignees = await this.client.listAssignees(repo).catch(() => []);
         await this.post({ type: 'labelsLoaded', labels });
         await this.post({ type: 'assigneesLoaded', assignees });
-        await this.loadIssues(1);
+    }
+    async postAccess(repo) {
+        const access = await this.client.getRepoAccess(repo);
+        await this.post({ type: 'repoAccess', access });
     }
     async loadIssues(page, opts = {}) {
         this.repo = opts.repo || this.repo;
@@ -258,12 +355,15 @@ class IssueViewController {
         const htmlPath = vscode.Uri.joinPath(root, 'issuesTab.html');
         const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(root, 'issuesTab.css'));
         const jsUri = webview.asWebviewUri(vscode.Uri.joinPath(root, 'issuesTab.js'));
+        const markdownItUri = webview.asWebviewUri(vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', 'markdown-it', 'dist', 'markdown-it.min.js'));
         const codiconUri = webview.asWebviewUri(vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'));
         const nonce = String(Date.now());
         const html = (0, node_fs_1.readFileSync)(htmlPath.fsPath, 'utf8');
         return html
             .replace(/__NONCE__/g, nonce)
+            .replace(/__CSP_SOURCE__/g, webview.cspSource)
             .replace('__CSS__', cssUri.toString())
+            .replace('__MARKDOWN_IT__', markdownItUri.toString())
             .replace('__JS__', jsUri.toString())
             .replace('__CODICON__', codiconUri.toString());
     }

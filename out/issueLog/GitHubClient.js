@@ -35,11 +35,16 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GitHubClient = void 0;
 const vscode = __importStar(require("vscode"));
+const node_fs_1 = require("node:fs");
+const node_path_1 = require("node:path");
 const BASE = 'https://api.github.com';
 class GitHubClient {
     constructor(getToken) {
         this.getToken = getToken;
         this.cache = new Map();
+    }
+    async hasToken() {
+        return Boolean(await this.getToken());
     }
     async request(path, opts = {}) {
         const token = await this.getToken();
@@ -124,6 +129,17 @@ class GitHubClient {
         });
         return this.toComment(comment);
     }
+    async createIssue(repo, input) {
+        const issue = await this.request(`/repos/${repo}/issues`, {
+            method: 'POST',
+            body: {
+                title: input.title,
+                body: input.body ?? '',
+                labels: input.labels ?? []
+            }
+        });
+        return this.toIssue(issue);
+    }
     async updateIssue(repo, number, patch) {
         const issue = await this.request(`/repos/${repo}/issues/${number}`, {
             method: 'PATCH',
@@ -139,24 +155,221 @@ class GitHubClient {
         const users = await this.request(`/repos/${repo}/assignees?per_page=100`);
         return users.map((u) => ({ login: u.login, avatarUrl: u.avatar_url }));
     }
-    static async detectRepo() {
-        const folder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-        if (!folder) {
-            return undefined;
+    async listRepositories() {
+        const repos = await this.request('/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member');
+        return repos.filter((repo) => !repo.archived && !repo.disabled).map((repo) => repo.full_name);
+    }
+    async getRepoAccess(repo) {
+        const isAuthenticated = await this.hasToken();
+        if (!isAuthenticated) {
+            return { canEdit: false, canComment: false, isAuthenticated };
         }
+        try {
+            const data = await this.request(`/repos/${repo}`);
+            const permissions = data.permissions ?? {};
+            const canEdit = Boolean(permissions.admin || permissions.maintain || permissions.push || permissions.triage);
+            return { canEdit, canComment: true, isAuthenticated };
+        }
+        catch {
+            return { canEdit: false, canComment: true, isAuthenticated };
+        }
+    }
+    static async detectRepo() {
+        return (await this.detectRepoCandidates())[0]?.slug;
+    }
+    static async detectRepos() {
+        return (await this.detectRepoCandidates()).map((repo) => repo.slug);
+    }
+    static async detectRepoCandidates() {
+        const folders = await this.getCandidateFolders();
+        if (!folders.length) {
+            return [];
+        }
+        const { execFile } = await Promise.resolve().then(() => __importStar(require('node:child_process')));
+        const { promisify } = await Promise.resolve().then(() => __importStar(require('node:util')));
+        const exec = promisify(execFile);
+        const repos = new Map();
+        for (const folder of folders) {
+            for (const repo of await this.detectReposFromFolder(folder, exec)) {
+                if (!repos.has(repo.slug)) {
+                    repos.set(repo.slug, repo);
+                }
+            }
+        }
+        return [...repos.values()];
+    }
+    static getGitExtensionStatus() {
+        try {
+            const extension = vscode.extensions.getExtension('vscode.git');
+            if (!extension) {
+                return {
+                    available: false,
+                    active: false,
+                    message: "VS Code's built-in Git extension is not available."
+                };
+            }
+            return { available: true, active: extension.isActive };
+        }
+        catch (error) {
+            return {
+                available: false,
+                active: false,
+                message: error instanceof Error ? error.message : String(error)
+            };
+        }
+    }
+    static async activateGitExtension() {
+        try {
+            const extension = vscode.extensions.getExtension('vscode.git');
+            if (!extension) {
+                await vscode.commands.executeCommand('workbench.view.scm').then(undefined, () => undefined);
+                return this.getGitExtensionStatus();
+            }
+            if (!extension.isActive) {
+                await extension.activate();
+            }
+            return this.getGitExtensionStatus();
+        }
+        catch (error) {
+            return {
+                available: false,
+                active: false,
+                message: error instanceof Error ? error.message : String(error)
+            };
+        }
+    }
+    static async getCandidateFolders() {
+        const folders = new Set();
+        for (const folder of await this.getEditorGitFolders()) {
+            folders.add(folder);
+        }
+        for (const folder of vscode.workspace.workspaceFolders ?? []) {
+            if ((0, node_fs_1.existsSync)(vscode.Uri.joinPath(folder.uri, '.git').fsPath)) {
+                folders.add(folder.uri.fsPath);
+            }
+        }
+        for (const folder of vscode.workspace.workspaceFolders ?? []) {
+            for (const child of await this.findGitChildren(folder.uri)) {
+                folders.add(child);
+            }
+            folders.add(folder.uri.fsPath);
+        }
+        try {
+            const gitExtension = vscode.extensions.getExtension('vscode.git');
+            if (gitExtension?.isActive) {
+                const gitApi = gitExtension.exports?.getAPI?.(1);
+                for (const repo of gitApi?.repositories ?? []) {
+                    if (repo.rootUri?.fsPath) {
+                        folders.add(repo.rootUri.fsPath);
+                    }
+                }
+            }
+        }
+        catch {
+            // Shell-based detection above is the primary path; Git extension discovery is optional.
+        }
+        return [...folders];
+    }
+    static async getEditorGitFolders() {
+        const roots = new Set();
+        const uris = [
+            vscode.window.activeTextEditor?.document.uri,
+            ...vscode.window.visibleTextEditors.map((editor) => editor.document.uri)
+        ];
+        for (const uri of uris) {
+            if (uri?.scheme !== 'file') {
+                continue;
+            }
+            const root = await this.gitRootForPath((0, node_path_1.dirname)(uri.fsPath));
+            if (root) {
+                roots.add(root);
+                continue;
+            }
+            const activeFolder = vscode.workspace.getWorkspaceFolder(uri);
+            if (activeFolder) {
+                roots.add(activeFolder.uri.fsPath);
+            }
+        }
+        return [...roots];
+    }
+    static async gitRootForPath(folder) {
         try {
             const { execFile } = await Promise.resolve().then(() => __importStar(require('node:child_process')));
             const { promisify } = await Promise.resolve().then(() => __importStar(require('node:util')));
             const exec = promisify(execFile);
-            const { stdout } = await exec('git', ['remote', 'get-url', 'origin'], { cwd: folder });
-            const url = stdout.trim();
-            const match = url.match(/github\.com[:/](.+?)(?:\.git)?$/) ??
-                url.match(/github\.com\/(.+?)(?:\.git)?$/);
-            return match?.[1];
+            const { stdout } = await exec('git', ['rev-parse', '--show-toplevel'], { cwd: folder });
+            return stdout.trim() || undefined;
         }
         catch {
             return undefined;
         }
+    }
+    static async findGitChildren(root) {
+        const found = [];
+        try {
+            const entries = await vscode.workspace.fs.readDirectory(root);
+            for (const [name, type] of entries) {
+                if (name.startsWith('.') || type !== vscode.FileType.Directory) {
+                    continue;
+                }
+                const child = vscode.Uri.joinPath(root, name);
+                if ((0, node_fs_1.existsSync)(vscode.Uri.joinPath(child, '.git').fsPath)) {
+                    found.push(child.fsPath);
+                }
+            }
+        }
+        catch {
+            return found;
+        }
+        return found;
+    }
+    static async detectReposFromFolder(folder, exec) {
+        try {
+            const { stdout: rootStdout } = await exec('git', ['rev-parse', '--show-toplevel'], { cwd: folder });
+            const gitRoot = rootStdout.trim() || folder;
+            const remotes = [
+                { name: 'upstream', url: await this.remoteUrl('upstream', gitRoot, exec) },
+                { name: 'origin', url: await this.remoteUrl('origin', gitRoot, exec) },
+                ...(await this.remoteUrls(gitRoot, exec)).map((url) => ({ name: 'remote', url }))
+            ].filter((remote) => Boolean(remote.url));
+            const repos = new Map();
+            for (const remote of remotes) {
+                const slug = this.parseGitHubSlug(remote.url);
+                if (slug) {
+                    repos.set(slug, { slug, folder: gitRoot, remote: remote.name });
+                }
+            }
+            return [...repos.values()];
+        }
+        catch {
+            return [];
+        }
+    }
+    static async remoteUrl(remote, cwd, exec) {
+        try {
+            const { stdout } = await exec('git', ['remote', 'get-url', remote], { cwd });
+            return stdout.trim() || undefined;
+        }
+        catch {
+            return undefined;
+        }
+    }
+    static async remoteUrls(cwd, exec) {
+        try {
+            const { stdout } = await exec('git', ['remote', '-v'], { cwd });
+            return stdout
+                .split(/\r?\n/)
+                .map((line) => line.trim().split(/\s+/)[1])
+                .filter((url) => Boolean(url));
+        }
+        catch {
+            return [];
+        }
+    }
+    static parseGitHubSlug(url) {
+        const match = url.match(/github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?(?:[/#?].*)?$/) ??
+            url.match(/github\.com\/([^/\s]+\/[^/\s]+?)(?:\.git)?(?:[/#?].*)?$/);
+        return match?.[1]?.replace(/\.git$/, '');
     }
     invalidateCache(path) {
         if (path) {
