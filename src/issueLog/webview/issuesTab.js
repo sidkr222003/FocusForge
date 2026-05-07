@@ -234,6 +234,9 @@ window.addEventListener('message', (event) => {
         (msg.log.changeSummary || []).forEach(addBullet);
       }
       break;
+    case 'reportGenerated':
+      el('weeklyReportOutput').innerHTML = `<div class="hint">Report generated: <a href="${escapeHtml(String(msg.file))}">${escapeHtml(String(msg.file))}</a></div>`;
+      break;
     case 'error':
       el('issuesList').innerHTML = `<div class="hint">${escapeHtml(msg.message)}</div>`;
       break;
@@ -336,5 +339,29 @@ el('saveLogBtn').addEventListener('click', saveLog);
 el('setNowBtn').addEventListener('click', initTimePicker);
 el('completedDate').addEventListener('change', updateTimeHint);
 el('completedTime').addEventListener('change', updateTimeHint);
+
+// Tab switching logic
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    const tabName = tab.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('tab-active'));
+    document.querySelectorAll('.panel').forEach((p) => p.classList.add('hidden'));
+    tab.classList.add('tab-active');
+    if (tabName === 'issues') {
+      el('issuesPanel').classList.remove('hidden');
+    } else if (tabName === 'weekly') {
+      el('weeklyPanel').classList.remove('hidden');
+    }
+  });
+});
+
+// Weekly report buttons
+el('generateCurrentWeekBtn')?.addEventListener('click', () => {
+  vscode.postMessage({ type: 'generateCurrentWeekReport' });
+});
+
+el('generateLastWeekBtn')?.addEventListener('click', () => {
+  vscode.postMessage({ type: 'generateLastWeekReport' });
+});
 
 vscode.postMessage({ type: 'ready' });

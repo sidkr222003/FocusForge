@@ -342,3 +342,15 @@ button {
 .hidden {
   display: none !important;
 }
+
+.weekly-content {
+  padding: 8px;
+}
+
+.weekly-output {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--vscode-sideBar-border);
+  border-radius: 6px;
+  background: var(--vscode-input-background);
+}

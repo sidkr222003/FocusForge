@@ -37,6 +37,7 @@ exports.IssueViewController = void 0;
 const vscode = __importStar(require("vscode"));
 const node_fs_1 = require("node:fs");
 const GitHubClient_1 = require("./GitHubClient");
+const WeeklyReportGenerator_1 = require("../weeklyReport/WeeklyReportGenerator");
 class IssueViewController {
     constructor(ctx, store, client) {
         this.ctx = ctx;
@@ -162,6 +163,24 @@ class IssueViewController {
                 }
                 case 'newIssue': {
                     await vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${this.requiredRepo()}/issues/new`));
+                    break;
+                }
+                case 'generateCurrentWeekReport': {
+                    const reportGen = new WeeklyReportGenerator_1.WeeklyReportGenerator(this.ctx, this.store);
+                    const file = await reportGen.generateCurrentWeek();
+                    await vscode.window.showInformationMessage('Weekly report generated.', 'Open Report').then((choice) => {
+                        if (choice === 'Open Report') {
+                            vscode.commands.executeCommand('vscode.open', file);
+                        }
+                    });
+                    await this.post({ type: 'reportGenerated', file: file.toString() });
+                    break;
+                }
+                case 'generateLastWeekReport': {
+                    const reportGen = new WeeklyReportGenerator_1.WeeklyReportGenerator(this.ctx, this.store);
+                    const file = await reportGen.generateLastWeek();
+                    await vscode.commands.executeCommand('vscode.open', file);
+                    await this.post({ type: 'reportGenerated', file: file.toString() });
                     break;
                 }
             }
