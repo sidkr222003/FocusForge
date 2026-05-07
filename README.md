@@ -1,5 +1,7 @@
 # FocusForge: Coding Session Tracker
 
+![FocusForge preview](https://raw.githubusercontent.com/sidkr222003/FocusForge/main/media/demo.gif)
+
 FocusForge turns VS Code into a local-first productivity cockpit for developers and students. It tracks real coding time, focus quality, Pomodoro rhythm, project effort, language practice, GitHub issue work, commits, planner sessions, journal notes, achievements, reports, and optional AI insights.
 
 No extension server. No telemetry pipeline. Your session history stays local unless you explicitly opt into GitHub-powered features.
