@@ -12,21 +12,33 @@ body {
 }
 
 .tabs {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  gap: 0;
   border-bottom: 1px solid var(--vscode-sideBar-border);
 }
 
 .tab {
-  padding: 8px 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
   border: 0;
   color: var(--vscode-descriptionForeground);
   background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
 }
 
 .tab-active {
   color: var(--vscode-foreground);
   border-bottom: 2px solid var(--vscode-focusBorder);
+  background: var(--vscode-list-activeSelectionBackground);
 }
 
 .panel {
@@ -42,6 +54,8 @@ body {
   border: 1px solid var(--vscode-inputValidation-infoBorder);
   background: var(--vscode-inputValidation-infoBackground);
   border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .auth-left {
@@ -64,19 +78,22 @@ body {
 .auth-right {
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .token-stage {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
 }
 
 .token-form {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 280px;
+  width: 100%;
+  max-width: 320px;
 }
 
 .token-form label {
@@ -88,6 +105,8 @@ body {
   padding: 6px 8px;
   font-family: monospace;
   font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .token-form .hint {
@@ -95,15 +114,57 @@ body {
   color: var(--vscode-descriptionForeground);
 }
 
-.repo-row,
-.search-row,
-.filter-row,
-.actions-row,
-.time-row {
+.repo-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+#repoSelect {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#searchInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#stateFilter {
+  flex: 0 0 auto;
+}
+
+#labelsFilter {
+  flex: 1;
+  min-width: 0;
+}
+
+.time-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 input,
@@ -114,10 +175,12 @@ button {
   background: var(--vscode-input-background);
   border: 1px solid var(--vscode-input-border);
   font: inherit;
+  box-sizing: border-box;
 }
 
 button {
   cursor: pointer;
+  white-space: nowrap;
 }
 
 #repoSelect,
@@ -129,6 +192,7 @@ button {
 #commentInput,
 #outcomeNote {
   width: 100%;
+  max-width: 100%;
 }
 
 .issues-list {
@@ -227,6 +291,9 @@ button {
   padding: 8px 16px;
   border-radius: 4px;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .secondary-btn,
@@ -234,6 +301,14 @@ button {
   background: var(--vscode-input-background);
   padding: 6px 12px;
   border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-btn {
+  padding: 6px 8px;
+  justify-content: center;
 }
 
 .danger-btn {
@@ -246,6 +321,22 @@ button {
   color: var(--vscode-testing-iconPassed);
   border-color: var(--vscode-testing-iconPassed);
   background: transparent;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-bottom: 8px;
+}
+
+.back-btn:hover {
+  color: var(--vscode-foreground);
 }
 
 .hidden {

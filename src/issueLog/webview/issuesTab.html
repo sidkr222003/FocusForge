@@ -6,21 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link nonce="__NONCE__" rel="stylesheet" href="__CODICON__" />
   <link nonce="__NONCE__" rel="stylesheet" href="__CSS__" />
-  <title>Session Tracker</title>
+  <title>Issue Log</title>
 </head>
 <body>
   <div class="tabs">
-    <button class="tab">Today</button>
-    <button class="tab">Goals</button>
-    <button class="tab">Awards</button>
-    <button class="tab">History</button>
-    <button class="tab tab-active">Issues</button>
+    <button class="tab tab-active" data-tab="issues">
+      <span class="codicon codicon-issue-opened"></span>
+      <span>Issues</span>
+    </button>
+    <button class="tab" data-tab="weekly">
+      <span class="codicon codicon-calendar"></span>
+      <span>Weekly Report</span>
+    </button>
   </div>
 
   <section class="panel" id="issuesPanel">
     <div id="authBanner" class="auth-banner hidden">
       <div class="auth-left">
-        <div class="auth-title">GitHub connection required</div>
+        <div class="auth-title"><span class="codicon codicon-github"></span> GitHub connection required</div>
         <div class="auth-subtitle">
           Sign in to load issues and save completion logs.
         </div>
@@ -29,13 +32,13 @@
       <div class="auth-right">
         <div id="tokenStage" class="token-stage">
           <button id="connectBtn" class="primary-btn">
-            Connect GitHub
+            <span class="codicon codicon-link"></span> Connect GitHub
           </button>
 
           <div id="tokenForm" class="token-form hidden">
             <label for="tokenInput">Enter token</label>
             <input id="tokenInput" type="password" placeholder="ghp_..." />
-            <button id="saveTokenBtn" class="primary-btn">Save token</button>
+            <button id="saveTokenBtn" class="primary-btn"><span class="codicon codicon-check"></span> Save token</button>
             <div class="hint small" id="tokenHint">
               This token is stored in VS Code SecretStorage.
             </div>
@@ -47,7 +50,7 @@
     <div class="repo-row">
       <span class="codicon codicon-repo"></span>
       <select id="repoSelect"></select>
-      <button id="newIssueBtn" class="icon-btn" title="New issue"><span class="codicon codicon-add"></span></button>
+      <button id="newIssueBtn" class="icon-btn" title="New issue"><span class="codicon codicon-plus"></span></button>
     </div>
 
     <div class="search-row">
@@ -77,28 +80,28 @@
       <textarea id="bodyInput" class="body-edit hidden"></textarea>
       <div id="detailBody" class="issue-body"></div>
 
-      <div class="section-title">Labels</div>
+      <div class="section-title"><span class="codicon codicon-tag"></span> Labels</div>
       <div class="labels-editor">
         <div id="currentLabels"></div>
-        <button id="editLabelsBtn" class="secondary-btn">Edit labels</button>
-        <button id="saveLabelsBtn" class="secondary-btn hidden">Save labels</button>
+        <button id="editLabelsBtn" class="secondary-btn"><span class="codicon codicon-pencil"></span> Edit labels</button>
+        <button id="saveLabelsBtn" class="secondary-btn hidden"><span class="codicon codicon-check"></span> Save labels</button>
         <div id="labelsPicker" class="dropdown hidden"></div>
       </div>
 
-      <div class="section-title">Assignees</div>
+      <div class="section-title"><span class="codicon codicon-mention"></span> Assignees</div>
       <div class="field-row">
         <select id="assigneeSelect"></select>
-        <button id="addAssigneeBtn" class="secondary-btn">Add assignee</button>
+        <button id="addAssigneeBtn" class="secondary-btn"><span class="codicon codicon-plus"></span> Add assignee</button>
         <div id="currentAssignees"></div>
       </div>
 
-      <div class="section-title">Conversation</div>
+      <div class="section-title"><span class="codicon codicon-comment-discussion"></span> Conversation</div>
       <div id="conversation" class="conversation"></div>
       <textarea id="commentInput" placeholder="Leave a comment..."></textarea>
-      <button id="commentBtn" class="primary-btn">Comment</button>
+      <button id="commentBtn" class="primary-btn"><span class="codicon codicon-comment"></span> Comment</button>
 
-      <div class="section-title">Log completion</div>
-      <div id="logBadge" class="log-badge hidden">Logged</div>
+      <div class="section-title"><span class="codicon codicon-checklist"></span> Log completion</div>
+      <div id="logBadge" class="log-badge hidden"><span class="codicon codicon-check"></span> Logged</div>
       <div class="field-row">
         <label>Outcome</label>
         <select id="outcomeSelect">
@@ -121,7 +124,7 @@
       <div class="field-row">
         <label>What changed</label>
         <div id="changeBullets"></div>
-        <button id="addBulletBtn" class="secondary-btn">Add line</button>
+        <button id="addBulletBtn" class="secondary-btn"><span class="codicon codicon-plus"></span> Add line</button>
       </div>
       <div class="field-row">
         <label>Outcome note</label>
@@ -131,11 +134,11 @@
         <label>Mood (1-5)</label>
         <input id="moodInput" min="1" max="5" type="number" />
       </div>
-      <button id="saveLogBtn" class="primary-btn">Save completion log</button>
+      <button id="saveLogBtn" class="primary-btn"><span class="codicon codicon-check"></span> Save completion log</button>
 
       <div class="actions-row">
-        <button id="closeIssueBtn" class="danger-btn">Close issue</button>
-        <button id="reopenIssueBtn" class="success-btn hidden">Reopen issue</button>
+        <button id="closeIssueBtn" class="danger-btn"><span class="codicon codicon-issue-closed"></span> Close issue</button>
+        <button id="reopenIssueBtn" class="success-btn hidden"><span class="codicon codicon-issue-reopened"></span> Reopen issue</button>
       </div>
     </div>
   </section>
