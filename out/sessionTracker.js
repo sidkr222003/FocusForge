@@ -188,63 +188,68 @@ class SessionTrackerViewProvider {
         };
         this.view.webview.html = this.getHtml();
         this.view.webview.onDidReceiveMessage(async (msg) => {
-            switch (msg.type) {
-                case "requestData":
-                    this.sendHistory();
-                    break;
-                case "toggleTracking":
-                    (0, sessionTimer_1.toggleSessionTracking)();
-                    this.sendHistory();
-                    break;
-                case "startTracking":
-                    (0, sessionTimer_1.startSessionTracking)();
-                    this.sendHistory();
-                    break;
-                case "stopTracking":
-                    (0, sessionTimer_1.stopSessionTracking)();
-                    this.sendHistory();
-                    break;
-                case "clearHistory":
-                    await this.clearHistory();
-                    break;
-                case "exportData":
-                    await this.handleExport(msg.format, msg.history);
-                    break;
-                case "saveGoal":
-                    await vscode.workspace
-                        .getConfiguration("devToolkit.sessionTracker")
-                        .update("dailyGoalMinutes", msg.minutes, vscode.ConfigurationTarget.Global);
-                    this.sendHistory();
-                    break;
-                case "saveNote":
-                    await this.saveNote(msg.payload);
-                    break;
-                case "addPlan":
-                    await this.addPlan(msg.plan);
-                    break;
-                case "deletePlan":
-                    await this.deletePlan(String(msg.id ?? ""));
-                    break;
-                case "exportPlans":
-                    await this.exportPlans();
-                    break;
-                case "refreshLeaderboard":
-                    await this.refreshLeaderboard();
-                    break;
-                case "publishLeaderboard":
-                    await this.publishLeaderboard();
-                    break;
-                case "generateAiInsight":
-                    await this.generateAiInsight();
-                    break;
-                case "openJournal":
-                    this.navigateToTab("journal");
-                    break;
-                case "showInfo":
-                    if (msg.message) {
-                        vscode.window.showInformationMessage(String(msg.message));
-                    }
-                    break;
+            try {
+                switch (msg.type) {
+                    case "requestData":
+                        this.sendHistory();
+                        break;
+                    case "toggleTracking":
+                        (0, sessionTimer_1.toggleSessionTracking)();
+                        this.sendHistory();
+                        break;
+                    case "startTracking":
+                        (0, sessionTimer_1.startSessionTracking)();
+                        this.sendHistory();
+                        break;
+                    case "stopTracking":
+                        (0, sessionTimer_1.stopSessionTracking)();
+                        this.sendHistory();
+                        break;
+                    case "clearHistory":
+                        await this.clearHistory();
+                        break;
+                    case "exportData":
+                        await this.handleExport(msg.format, msg.history);
+                        break;
+                    case "saveGoal":
+                        await vscode.workspace
+                            .getConfiguration("devToolkit.sessionTracker")
+                            .update("dailyGoalMinutes", msg.minutes, vscode.ConfigurationTarget.Global);
+                        this.sendHistory();
+                        break;
+                    case "saveNote":
+                        await this.saveNote(msg.payload);
+                        break;
+                    case "addPlan":
+                        await this.addPlan(msg.plan);
+                        break;
+                    case "deletePlan":
+                        await this.deletePlan(String(msg.id ?? ""));
+                        break;
+                    case "exportPlans":
+                        await this.exportPlans();
+                        break;
+                    case "refreshLeaderboard":
+                        await this.refreshLeaderboard();
+                        break;
+                    case "publishLeaderboard":
+                        await this.publishLeaderboard();
+                        break;
+                    case "generateAiInsight":
+                        await this.generateAiInsight();
+                        break;
+                    case "openJournal":
+                        this.navigateToTab("journal");
+                        break;
+                    case "showInfo":
+                        if (msg.message) {
+                            vscode.window.showInformationMessage(String(msg.message));
+                        }
+                        break;
+                }
+            }
+            catch (error) {
+                vscode.window.showErrorMessage(error instanceof Error ? error.message : String(error));
             }
         });
         this.liveStateSubscription?.dispose();
@@ -367,6 +372,15 @@ class SessionTrackerViewProvider {
         const scriptUri = webview
             ? webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "src", "ui", "dashboard.js"))
             : "";
+        const soundUri = (fileName) => webview
+            ? webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "media", "sounds", fileName))
+            : "";
+        const soundRainUri = soundUri("rain.mp3");
+        const soundOceanUri = soundUri("ocean.mp3");
+        const soundFireplaceUri = soundUri("fireplace.mp3");
+        const soundCafeUri = soundUri("cafe.mp3");
+        const soundForestUri = soundUri("forest.mp3");
+        const soundLofiUri = soundUri("lofi.mp3");
         const htmlPath = path.join(this.context.extensionUri.fsPath, "src", "ui", "dashboard.html");
         let html = "";
         try {
@@ -379,7 +393,13 @@ class SessionTrackerViewProvider {
             .replace(/\$\{webview\.cspSource\}/g, cspSource)
             .replace(/\$\{codiconsUri\}/g, String(codiconsUri))
             .replace(/\$\{styleUri\}/g, String(styleUri))
-            .replace(/\$\{scriptUri\}/g, String(scriptUri));
+            .replace(/\$\{scriptUri\}/g, String(scriptUri))
+            .replace(/\$\{soundRainUri\}/g, String(soundRainUri))
+            .replace(/\$\{soundOceanUri\}/g, String(soundOceanUri))
+            .replace(/\$\{soundFireplaceUri\}/g, String(soundFireplaceUri))
+            .replace(/\$\{soundCafeUri\}/g, String(soundCafeUri))
+            .replace(/\$\{soundForestUri\}/g, String(soundForestUri))
+            .replace(/\$\{soundLofiUri\}/g, String(soundLofiUri));
     }
     navigateToTab(tab) {
         this.view?.webview.postMessage({ type: "navigateTab", tab });
@@ -459,8 +479,15 @@ class SessionTrackerViewProvider {
         await this.view?.webview.postMessage({ type: "leaderboard", rows, updatedAt: new Date().toISOString() });
     }
     async publishLeaderboard() {
-        await (0, leaderboard_1.publishLeaderboardStat)(this.buildLocalLeaderboardRow());
-        vscode.window.showInformationMessage("Leaderboard stat published to GitHub Gist.");
+        const result = await (0, leaderboard_1.publishLeaderboardStat)(this.buildLocalLeaderboardRow(), await this.getGithubToken?.());
+        const message = result.url
+            ? vscode.window.showInformationMessage("Leaderboard stat published to GitHub Gist.", "Open Gist")
+            : vscode.window.showInformationMessage("Leaderboard stat published to GitHub Gist.");
+        message.then((choice) => {
+            if (choice === "Open Gist" && result.url) {
+                vscode.env.openExternal(vscode.Uri.parse(result.url));
+            }
+        });
         await this.refreshLeaderboard();
     }
     async generateAiInsight() {

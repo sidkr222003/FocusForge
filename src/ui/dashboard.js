@@ -1,6 +1,6 @@
 /**
  * Dev Toolkit — Session Tracker Dashboard
- * Full featured: 100+ achievements, 4 progressive badges,
+ * Full featured: expanded achievements, 4 progressive badges,
  * heatmap, goal ring, history chart, idle/flow detection.
  */
 (() => {
@@ -219,6 +219,18 @@
     high_efficiency: `<svg viewBox="0 0 20 20"><path d="M10 3v14M5 8l5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M5 14h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
     code_ninja:      `<svg viewBox="0 0 20 20"><path d="M5 6l-3 4 3 4M15 6l3 4-3 4M11 4l-2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`,
     machine:         `<svg viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 9h6M7 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1 9h2M17 9h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    triple_session:  `<svg viewBox="0 0 20 20"><rect x="3" y="3" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="12" y="3" width="5" height="5" rx="1.3" fill="currentColor" opacity="0.75"/><rect x="7.5" y="12" width="5" height="5" rx="1.3" fill="currentColor" opacity="0.45"/><path d="M8 5.5h4M10 8v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+    sprint_starter:  `<svg viewBox="0 0 20 20"><path d="M3 14h5l2-8 2 8h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 17h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    clean_finish:    `<svg viewBox="0 0 20 20"><path d="M4 10l3.5 3.5L16 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 16h14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".55"/></svg>`,
+    planner_pro:     `<svg viewBox="0 0 20 20"><rect x="3" y="4" width="14" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M7 12h6M7 15h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+    break_balancer:  `<svg viewBox="0 0 20 20"><path d="M5 5h10v5a5 5 0 01-10 0z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M15 7h1.5a2 2 0 010 4H15M6 17h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+    steady_hands:    `<svg viewBox="0 0 20 20"><path d="M3 11c2-4 4-4 7 0s5 4 7 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="5" cy="11" r="1.5" fill="currentColor"/><circle cx="15" cy="11" r="1.5" fill="currentColor"/></svg>`,
+    repo_runner:     `<svg viewBox="0 0 20 20"><circle cx="5" cy="5" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="15" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 5h3a3 3 0 013 3v5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    note_keeper:     `<svg viewBox="0 0 20 20"><path d="M5 3h8l3 3v11H5z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M13 3v4h3M8 10h5M8 13h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+    language_scout:  `<svg viewBox="0 0 20 20"><path d="M4 4h12v12H4z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 13l-2-3 2-3M13 7l2 3-2 3M11 6l-2 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    week_anchor:     `<svg viewBox="0 0 20 20"><path d="M10 2v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M5 8a5 5 0 0010 0" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 16h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    quiet_power:     `<svg viewBox="0 0 20 20"><path d="M6 4h8l2 5-6 7-6-7z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 9h4M10 6v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+    reset_rebound:   `<svg viewBox="0 0 20 20"><path d="M5 7a6 6 0 019.5-1.5L17 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 13a6 6 0 01-9.5 1.5L3 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 
     // Time of Day
     night_owl:       `<svg viewBox="0 0 20 20"><path d="M14 10a6 6 0 01-8.5 5.4A7 7 0 1014 10z" fill="currentColor"/></svg>`,
@@ -288,6 +300,8 @@
       { id: 'time_crystal',   name: 'Time Crystal',    desc: 'Accumulate 10 hours of flow time',      icon: 'time_crystal',   check: h => totalFlowSeconds(h) >= 36000 },
       { id: 'flow_god',       name: 'Flow God',        desc: '100 total flow sessions',               icon: 'flow_god',       check: h => h.filter(s => s.maxStreak >= 1500).length >= 100 },
       { id: 'deep_diver',     name: 'Deep Diver',      desc: 'Complete 10 Deep Work sessions',        icon: 'deep_diver',     check: h => totalDeepWorkCompleted(h) >= 10 },
+      { id: 'sprint_starter',  name: 'Sprint Starter',  desc: 'Complete 3 sessions under 30 minutes', icon: 'sprint_starter', check: h => h.filter(s => s.totalTime > 0 && s.totalTime <= 1800).length >= 3 },
+      { id: 'quiet_power',     name: 'Quiet Power',     desc: 'Finish a 90+ min session with 2 or fewer idle events', icon: 'quiet_power', check: h => h.some(s => s.totalTime >= 5400 && (s.idleCount || 0) <= 2) },
     ],
     productivity: [
       { id: 'early_riser',    name: 'Early Riser',     desc: 'Complete a session before 8 AM',        icon: 'early_riser',    check: h => h.some(s => new Date(s.date).getHours() < 8) },
@@ -299,9 +313,15 @@
       { id: 'high_efficiency',name: 'Peak Performer',  desc: '5 sessions with 90%+ efficiency',       icon: 'high_efficiency',check: h => h.filter(s => s.totalTime > 0 && s.activeTime/s.totalTime >= 0.9).length >= 5 },
       { id: 'code_ninja',     name: 'Code Ninja',      desc: 'Complete 5 sessions in one day',        icon: 'code_ninja',     check: h => Object.values(sessionsByDay(h)).some(ss => ss.length >= 5) },
       { id: 'machine',        name: 'The Machine',     desc: '8+ hours active in a single day',       icon: 'machine',        check: h => Object.values(sessionsByDay(h)).some(ss => ss.reduce((a,s)=>a+s.activeTime,0) >= 28800) },
-      { id: 'daily_double2',  name: 'Triple Session',  desc: '3+ sessions in a single day',           icon: 'code_ninja',     check: h => Object.values(sessionsByDay(h)).some(ss => ss.length >= 3) },
+      { id: 'daily_double2',  name: 'Triple Session',  desc: '3+ sessions in a single day',           icon: 'triple_session', check: h => Object.values(sessionsByDay(h)).some(ss => ss.length >= 3) },
       { id: 'polyglot',        name: 'Polyglot',        desc: 'Use 5+ languages in a week',            icon: 'polyglot',       check: h => distinctLanguagesSince(h, 7) >= 5 },
       { id: 'perfect_100',     name: 'Perfect 100',     desc: 'Score 100 on a 30+ min session',        icon: 'perfect_100',    check: h => h.some(s => s.totalTime >= 1800 && focusScoreForSession(s) >= 100) },
+      { id: 'clean_finish',    name: 'Clean Finish',    desc: 'End 5 sessions with 80%+ efficiency',   icon: 'clean_finish',   check: h => h.filter(s => s.totalTime > 0 && (s.engagedTime ?? s.activeTime) / s.totalTime >= 0.8).length >= 5 },
+      { id: 'planner_pro',     name: 'Planner Pro',     desc: 'Fulfill 5 planned sessions',           icon: 'planner_pro',    check: () => completedPlannedSessions(lastPlans) >= 5 },
+      { id: 'break_balancer',  name: 'Break Balancer',  desc: 'Take 20 tracked breaks',               icon: 'break_balancer', check: h => totalBreakCount(h) >= 20 },
+      { id: 'steady_hands',    name: 'Steady Hands',    desc: 'Complete 10 sessions with 3 or fewer idle events', icon: 'steady_hands', check: h => h.filter(s => (s.idleCount || 0) <= 3).length >= 10 },
+      { id: 'repo_runner',     name: 'Repo Runner',     desc: 'Track sessions across 3 projects',      icon: 'repo_runner',    check: () => (lastProjects || []).length >= 3 },
+      { id: 'language_scout',  name: 'Language Scout',  desc: 'Use 3+ languages in a day',             icon: 'language_scout', check: h => Object.values(sessionsByDay(h)).some(ss => distinctLanguagesSince(ss, 3650) >= 3) },
     ],
     timeOfDay: [
       { id: 'night_owl',      name: 'Night Owl',       desc: 'Code past midnight, 5 sessions',        icon: 'night_owl',      check: h => timeOfDayCount(h, 0, 3) >= 5 },
@@ -325,6 +345,9 @@
       { id: 'relentless',     name: 'Relentless',      desc: '90% consistency in last 90 days',       icon: 'relentless',     check: h => consistencyPct(h) >= 90 },
       { id: 'legendary',      name: 'Legendary',       desc: 'Code 365 unique days',                  icon: 'legendary',      check: h => uniqueCodingDays(h) >= 365 },
       { id: 'reflective_coder',name: 'Reflective Coder',desc: 'Add notes to 10 sessions in a row',     icon: 'reflective_coder',check: h => maxConsecutiveNotes(h) >= 10 },
+      { id: 'note_keeper',    name: 'Note Keeper',     desc: 'Attach notes to 25 sessions',           icon: 'note_keeper',    check: h => h.filter(s => s.note?.summary).length >= 25 },
+      { id: 'week_anchor',    name: 'Week Anchor',     desc: 'Log 10+ active hours in one week',      icon: 'week_anchor',    check: h => Object.values(sessionsByWeek(h)).some(seconds => seconds >= 36000) },
+      { id: 'reset_rebound',  name: 'Reset Rebound',   desc: 'Return after 7+ days away and complete a session', icon: 'reset_rebound', check: h => hasComebackGap(h, 7) },
     ],
   };
 
@@ -423,6 +446,8 @@
   function totalActiveHours(h) { return totalActiveSeconds(h) / 3600; }
   function totalFlowSeconds(h) { return h.filter(s=>s.maxStreak>=1500).reduce((a,s)=>a+s.maxStreak,0); }
   function totalDeepWorkCompleted(h) { return h.reduce((a,s)=>a+(s.deepWorkCompleted||0),0); }
+  function totalBreakCount(h) { return h.reduce((a,s)=>a+(s.breaks||0),0); }
+  function completedPlannedSessions(plans) { return (plans || []).filter(plan => plan.fulfilledSessionId).length; }
 
   function sessionsByDay(h) {
     const map = {};
@@ -430,6 +455,19 @@
       const day = new Date(s.date).toDateString();
       if (!map[day]) map[day] = [];
       map[day].push(s);
+    });
+    return map;
+  }
+
+  function sessionsByWeek(h) {
+    const map = {};
+    h.forEach(s => {
+      const date = new Date(s.date);
+      const weekStart = new Date(date);
+      weekStart.setHours(0, 0, 0, 0);
+      weekStart.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+      const key = weekStart.toISOString().slice(0, 10);
+      map[key] = (map[key] || 0) + (s.activeTime || 0);
     });
     return map;
   }
@@ -449,6 +487,16 @@
       if (diff <= 1.5) { cur++; max = Math.max(max, cur); } else cur = 1;
     }
     return max;
+  }
+
+  function hasComebackGap(h, gapDays) {
+    const days = Object.keys(sessionsByDay(h))
+      .map(d => new Date(d).getTime())
+      .sort((a,b) => a-b);
+    for (let i = 1; i < days.length; i++) {
+      if ((days[i] - days[i - 1]) / 86400000 >= gapDays) return true;
+    }
+    return false;
   }
 
   function currentDayStreak(h) {
@@ -1116,29 +1164,80 @@
     const list = $('plannerList');
     if (!list) return;
     list.innerHTML = '';
+    const safePlans = plans || [];
+    const now = new Date();
+    const todayIso = localDateIso(now);
+    const upcoming = safePlans.filter(plan => !plan.fulfilledSessionId && new Date(`${plan.date}T${plan.startTime}:00`) >= startOfDay(now));
+    const todayPlans = safePlans.filter(plan => plan.date === todayIso);
+    const doneCount = safePlans.filter(plan => plan.fulfilledSessionId).length;
+    const queuedMinutes = upcoming.reduce((sum, plan) => sum + (Number(plan.durationMinutes) || 0), 0);
+    if ($('plannerTodayCount')) $('plannerTodayCount').textContent = String(todayPlans.length);
+    if ($('plannerUpcomingMinutes')) $('plannerUpcomingMinutes').textContent = fmt(queuedMinutes * 60);
+    if ($('plannerDoneCount')) $('plannerDoneCount').textContent = String(doneCount);
+    if ($('plannerSummary')) $('plannerSummary').textContent = `${upcoming.length} upcoming`;
     const rows = (plans || [])
       .slice()
       .sort((a,b) => new Date(`${a.date}T${a.startTime}:00`) - new Date(`${b.date}T${b.startTime}:00`))
       .slice(0, 12);
     if (!rows.length) {
-      list.innerHTML = '<div class="lang-empty">No planned sessions yet.</div>';
+      list.innerHTML = '<div class="lang-empty">No planned sessions yet. Schedule one to anchor your next focus block.</div>';
       return;
     }
     rows.forEach(plan => {
+      const start = new Date(`${plan.date}T${plan.startTime}:00`);
+      const end = new Date(start.getTime() + (Number(plan.durationMinutes) || 0) * 60000);
+      const isDone = Boolean(plan.fulfilledSessionId);
+      const isOverdue = !isDone && end < now;
+      const day = start.toLocaleDateString(undefined, { day: '2-digit' });
+      const month = start.toLocaleDateString(undefined, { month: 'short' });
+      const time = start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      const relative = relativePlanLabel(start, now);
       const row = document.createElement('div');
-      row.className = `planner-row${plan.fulfilledSessionId ? ' done' : ''}`;
+      row.className = `planner-row${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}`;
       row.innerHTML = `
+        <div class="planner-date-chip" aria-hidden="true">
+          <strong>${escapeText(day)}</strong>
+          <span>${escapeText(month)}</span>
+        </div>
         <div class="planner-main">
           <div class="planner-title">${escapeText(plan.label || 'Planned coding session')}</div>
-          <div class="planner-meta">${escapeText(plan.date)} · ${escapeText(plan.startTime)} · ${plan.durationMinutes}m${plan.fulfilledSessionId ? ' · fulfilled' : ''}</div>
+          <div class="planner-meta">
+            <span class="planner-pill"><i class="codicon codicon-clock"></i>${escapeText(time)}</span>
+            <span class="planner-pill"><i class="codicon codicon-watch"></i>${Number(plan.durationMinutes) || 0}m</span>
+            <span class="planner-pill ${isDone ? 'done' : isOverdue ? 'overdue' : ''}">${isDone ? 'Fulfilled' : isOverdue ? 'Missed' : escapeText(relative)}</span>
+          </div>
         </div>
-        <button class="icon-btn" title="Delete plan" data-delete-plan="${escapeText(plan.id)}"><i class="codicon codicon-trash"></i></button>
+        <button class="icon-btn planner-delete" title="Delete plan" data-delete-plan="${escapeText(plan.id)}"><i class="codicon codicon-trash"></i></button>
       `;
       list.appendChild(row);
     });
     list.querySelectorAll('[data-delete-plan]').forEach(btn => {
       btn.addEventListener('click', () => vscode.postMessage({ type: 'deletePlan', id: btn.getAttribute('data-delete-plan') }));
     });
+  }
+
+  function startOfDay(date) {
+    const copy = new Date(date);
+    copy.setHours(0, 0, 0, 0);
+    return copy;
+  }
+
+  function relativePlanLabel(start, now) {
+    const diffMs = start.getTime() - now.getTime();
+    if (diffMs < 0) return 'Started';
+    const minutes = Math.round(diffMs / 60000);
+    if (minutes < 60) return `In ${Math.max(1, minutes)}m`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `In ${hours}h`;
+    const days = Math.round(hours / 24);
+    return `In ${days}d`;
+  }
+
+  function localDateIso(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   function renderPomodoro(history) {
@@ -2079,7 +2178,7 @@
     });
   }
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = localDateIso(new Date());
   if ($('planDate')) $('planDate').value = todayIso;
   if ($('planTime')) {
     const nextHour = new Date(Date.now() + 3600000);
@@ -2100,6 +2199,14 @@
       $('planLabel').value = '';
     });
   }
+  document.querySelectorAll('[data-plan-duration]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const minutes = btn.getAttribute('data-plan-duration');
+      if ($('planDuration') && minutes) $('planDuration').value = minutes;
+      document.querySelectorAll('[data-plan-duration]').forEach(other => other.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
   if ($('exportPlansBtn')) {
     $('exportPlansBtn').addEventListener('click', () => vscode.postMessage({ type: 'exportPlans' }));
   }
@@ -2113,44 +2220,76 @@
     $('generateInsightBtn').addEventListener('click', () => vscode.postMessage({ type: 'generateAiInsight' }));
   }
 
-  let audioContext = null;
-  let audioNodes = [];
+  let ambientAudio = $('ambientAudio');
+  let customAudioUrl = '';
   let audioPlaying = false;
+  function currentTrackSource() {
+    const track = $('audioTrackSelect')?.value || 'rain';
+    if (track === 'custom') return customAudioUrl;
+    return ambientAudio?.dataset?.[track] || '';
+  }
   function stopAudio() {
-    audioNodes.forEach(node => { try { node.stop?.(); node.disconnect?.(); } catch {} });
-    audioNodes = [];
+    if (ambientAudio) {
+      ambientAudio.pause();
+      ambientAudio.currentTime = 0;
+    }
     audioPlaying = false;
     const icon = $('audioToggleBtn')?.querySelector('.codicon');
     if (icon) icon.className = 'codicon codicon-play';
   }
-  function startAudio() {
+  async function startAudio() {
     stopAudio();
-    audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-    const gain = audioContext.createGain();
-    gain.gain.value = parseFloat($('audioVolume')?.value || '0.4');
-    gain.connect(audioContext.destination);
-    const osc = audioContext.createOscillator();
-    const track = $('audioTrackSelect')?.value || 'rain';
-    osc.type = track === 'lofi' ? 'sawtooth' : track === 'fireplace' ? 'triangle' : 'sine';
-    osc.frequency.value = ({ rain: 180, ocean: 90, fireplace: 130, cafe: 220, forest: 260, lofi: 75 })[track] || 180;
-    osc.connect(gain);
-    osc.start();
-    audioNodes = [osc, gain];
-    audioPlaying = true;
-    const icon = $('audioToggleBtn')?.querySelector('.codicon');
-    if (icon) icon.className = 'codicon codicon-debug-pause';
+    if (!ambientAudio) return;
+    const source = currentTrackSource();
+    if (!source) {
+      vscode.postMessage({
+        type: 'showInfo',
+        message: 'Add MP3 files in media/sounds or choose a custom MP3 from the folder button.',
+      });
+      return;
+    }
+    ambientAudio.src = source;
+    ambientAudio.volume = clamp(parseFloat($('audioVolume')?.value || '0.4'), 0, 1);
+    try {
+      await ambientAudio.play();
+      audioPlaying = true;
+      const icon = $('audioToggleBtn')?.querySelector('.codicon');
+      if (icon) icon.className = 'codicon codicon-debug-pause';
+    } catch {
+      audioPlaying = false;
+      vscode.postMessage({
+        type: 'showInfo',
+        message: 'Could not play this MP3. Check that the file exists and is a valid audio/mpeg file.',
+      });
+    }
   }
   if ($('audioToggleBtn')) {
     $('audioToggleBtn').addEventListener('click', () => audioPlaying ? stopAudio() : startAudio());
   }
   if ($('audioVolume')) {
     $('audioVolume').addEventListener('input', () => {
-      const gain = audioNodes.find(node => node.gain);
-      if (gain) gain.gain.value = parseFloat($('audioVolume').value);
+      if (ambientAudio) ambientAudio.volume = clamp(parseFloat($('audioVolume').value), 0, 1);
     });
   }
   if ($('audioTrackSelect')) {
     $('audioTrackSelect').addEventListener('change', () => {
+      if ($('audioTrackSelect').value === 'custom' && !customAudioUrl) {
+        $('customAudioInput')?.click();
+        return;
+      }
+      if (audioPlaying) startAudio();
+    });
+  }
+  if ($('customAudioBtn')) {
+    $('customAudioBtn').addEventListener('click', () => $('customAudioInput')?.click());
+  }
+  if ($('customAudioInput')) {
+    $('customAudioInput').addEventListener('change', event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      if (customAudioUrl) URL.revokeObjectURL(customAudioUrl);
+      customAudioUrl = URL.createObjectURL(file);
+      if ($('audioTrackSelect')) $('audioTrackSelect').value = 'custom';
       if (audioPlaying) startAudio();
     });
   }

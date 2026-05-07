@@ -319,6 +319,9 @@ window.addEventListener('message', (event) => {
       el('newIssueTitle').value = '';
       el('newIssueBody').value = '';
       el('newIssueLabels').value = '';
+      state.issues = [msg.issue, ...state.issues.filter((issue) => issue.number !== msg.issue.number)];
+      state.filteredIssues = state.issues;
+      renderIssues(state.filteredIssues);
       renderIssueDetail(msg.issue);
       vscode.postMessage({ type: 'loadComments', number: msg.issue.number });
       break;

@@ -79,13 +79,11 @@ body {
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 2px; height: 2px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 2px;
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+::-webkit-scrollbar { width: 0; height: 0; }
 
 /* ══ APP HEADER ════════════════════════════════════════════════ */
 .app-header {
@@ -168,13 +166,123 @@ body {
 .pomodoro-copy span { color: var(--vscode-descriptionForeground); font-size: 11px; }
 .pomodoro-copy { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
 
+.planner-block {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
+}
+
+.planner-section-header {
+  min-height: 24px;
+}
+
+.planner-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 9px;
+}
+
+.planner-stat {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.planner-stat-value {
+  display: block;
+  color: var(--vscode-sideBar-foreground);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planner-stat-label {
+  display: block;
+  margin-top: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .planner-form {
   display: grid;
-  grid-template-columns: 1fr 1fr 64px;
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  align-items: end;
 }
-.planner-form #planLabel,
-.planner-form #addPlanBtn { grid-column: span 3; }
+
+.planner-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.planner-label-field,
+.planner-presets,
+.planner-add-btn {
+  grid-column: 1 / -1;
+}
+
+.planner-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.planner-field-label .codicon {
+  font-size: 11px;
+}
+
+.planner-form .vscode-input {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.planner-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.planner-chip {
+  height: 26px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  font-weight: 700;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.planner-chip:hover,
+.planner-chip.active {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-subtle));
+  background: rgba(0,122,204,.12);
+  color: var(--vscode-sideBar-foreground);
+}
+
+.planner-add-btn {
+  min-height: 34px;
+  gap: 7px;
+}
 
 .planner-list,
 .project-list,
@@ -194,10 +302,58 @@ body {
   background: var(--surface-2);
   padding: 8px;
 }
-.planner-row.done { border-color: rgba(34,197,94,.35); }
+.planner-row {
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 9px;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+.planner-row:hover {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border-subtle));
+  background: var(--surface-3);
+}
+.planner-row.done {
+  border-color: rgba(34,197,94,.35);
+  background: rgba(34,197,94,.07);
+}
+.planner-row.overdue {
+  border-color: rgba(244,135,113,.4);
+}
+.planner-date-chip {
+  display: flex;
+  width: 44px;
+  flex: 0 0 44px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  line-height: 1;
+}
+.planner-date-chip strong {
+  color: var(--vscode-sideBar-foreground);
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.planner-date-chip span {
+  margin-top: 3px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
 .planner-main,
 .project-main,
 .leaderboard-main { flex: 1; min-width: 0; }
+.planner-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
 .planner-title,
 .project-title,
 .leaderboard-name {
@@ -210,6 +366,40 @@ body {
 .project-meta,
 .leaderboard-meta,
 .insight-card { color: var(--vscode-descriptionForeground); font-size: 11px; }
+.planner-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.planner-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  padding: 1px 6px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.planner-pill.done {
+  color: var(--accent-green);
+  border-color: rgba(34,197,94,.35);
+  background: rgba(34,197,94,.1);
+}
+.planner-pill.overdue {
+  color: var(--accent-red);
+  border-color: rgba(244,135,113,.4);
+  background: rgba(244,135,113,.1);
+}
+.planner-delete {
+  align-self: center;
+  flex: 0 0 22px;
+}
 .project-bar { height: 4px; margin-top: 6px; border-radius: 2px; background: var(--track-bg); overflow: hidden; }
 .project-bar-fill { height: 100%; background: var(--accent-blue); }
 .leaderboard-rank { width: 24px; font-weight: 800; color: var(--accent); }
@@ -238,6 +428,26 @@ body {
   border: 1px solid var(--vscode-input-border, var(--border));
 }
 .audio-volume { width: 74px; }
+
+@media (max-width: 330px) {
+  .planner-stats,
+  .planner-form {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planner-date-chip {
+    width: 38px;
+    flex-basis: 38px;
+  }
+
+  .audio-volume {
+    width: 58px;
+  }
+}
 
 /* ══ LIVE STRIP ════════════════════════════════════════════════ */
 .live-strip {

@@ -248,16 +248,18 @@ class IssueViewController {
         await this.post({ type: 'authUpdated', showAuthBanner: false });
     }
     async openTokenCreationPage() {
-        await vscode.env.openExternal(vscode.Uri.parse('https://github.com/settings/tokens/new?scopes=repo&description=VSCode+Session+Tracker'));
+        await vscode.env.openExternal(vscode.Uri.parse('https://github.com/settings/tokens/new?scopes=repo,gist&description=VSCode+Session+Tracker'));
     }
     async bootstrap() {
         await this.post({ type: 'gitStatus', status: GitHubClient_1.GitHubClient.getGitExtensionStatus() });
         const detectedRepoOptions = await GitHubClient_1.GitHubClient.detectRepoCandidates();
         const detectedRepos = detectedRepoOptions.map((repo) => repo.slug);
         const detected = detectedRepoOptions[0]?.slug;
-        this.repo = detected;
-        if (detected) {
-            await this.store.setLastRepo(detected);
+        const lastRepo = this.store.getLastRepo();
+        const preferredRepo = this.repo || lastRepo || detected;
+        this.repo = preferredRepo;
+        if (preferredRepo) {
+            await this.store.setLastRepo(preferredRepo);
         }
         const token = await this.store.getToken();
         await this.post({ type: 'boot', repo: this.repo ?? '', showAuthBanner: !token });
