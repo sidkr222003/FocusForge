@@ -154,8 +154,34 @@ window.addEventListener('message', (event) => {
       el('repoSelect').innerHTML = `<option value="${state.repo}">${state.repo || 'No repository detected'}</option>`;
       if (msg.showAuthBanner) {
         el('authBanner').classList.remove('hidden');
-        el('authBanner').innerHTML = `Connect GitHub to fetch issues from <strong>${state.repo || 'current repo'}</strong> <button id="connectBtn">Connect</button>`;
-        document.getElementById('connectBtn').addEventListener('click', () => vscode.postMessage({ type: 'requestAuth' }));
+        // Show connect button initially; token form will be revealed on click
+        el('tokenForm').classList.add('hidden');
+        el('connectBtn').classList.remove('hidden');
+        document.getElementById('connectBtn')?.addEventListener('click', () => {
+          // Show token input form in the webview
+          el('connectBtn').classList.add('hidden');
+          el('tokenForm').classList.remove('hidden');
+          // Also open token creation page for user convenience
+          vscode.postMessage({ type: 'requestAuth' });
+        });
+        // Handle save token button
+        document.getElementById('saveTokenBtn')?.addEventListener('click', () => {
+          const token = el('tokenInput').value.trim();
+          if (token) {
+            vscode.postMessage({ type: 'submitToken', token });
+          }
+        });
+      } else {
+        // Already authenticated - hide banner
+        el('authBanner').classList.add('hidden');
+      }
+      break;
+    case 'authUpdated':
+      // Hide auth banner after successful authentication
+      if (!msg.showAuthBanner) {
+        el('authBanner').classList.add('hidden');
+        // Re-bootstrap to load issues and labels
+        vscode.postMessage({ type: 'ready' });
       }
       break;
     case 'issuesLoaded':
