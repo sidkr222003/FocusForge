@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 - FocusForge Rebrand And Productivity Expansion
+## 1.0.0 - FocusForge Rebrand And Productivity Expansion
 
 ### Branding
 - Renamed the extension package to `focusforge`.
