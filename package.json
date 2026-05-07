@@ -1,0 +1,149 @@
+{
+  "name": "coding-session-tracker",
+  "displayName": "Coding Session Tracker",
+  "description": "Track deep-work sessions with live dashboard: heatmap, achievements, badges, goals, history & more.",
+  "version": "1.0.0",
+  "publisher": "devtoolkit",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "icon": "images/icon.png",
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "devToolkit",
+          "title": "Session Tracker",
+          "icon": "images/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "devToolkit": [
+        {
+          "type": "webview",
+          "id": "devToolkit.sessionTracker",
+          "name": "Session Tracker",
+          "retainContextWhenHidden": true
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "devToolkit.sessionNotesMenu",
+        "label": "Session Notes"
+      }
+    ],
+    "commands": [
+      { "command": "devToolkit.startSession",         "title": "Session Tracker: Start Session",       "icon": "$(play)" },
+      { "command": "devToolkit.endSession",            "title": "Session Tracker: End Session",         "icon": "$(debug-stop)" },
+      { "command": "devToolkit.openSessionDashboard",  "title": "Session Tracker: Open Dashboard" },
+      { "command": "devToolkit.viewAchievements",      "title": "Session Tracker: View Achievements" },
+      { "command": "devToolkit.viewHistory",           "title": "Session Tracker: View History" },
+      { "command": "devToolkit.addSessionNote",         "title": "Session Tracker: Add Session Note" },
+      { "command": "devToolkit.openJournal",            "title": "Session Tracker: Open Journal" },
+      { "command": "devToolkit.startDeepWorkMode",      "title": "Session Tracker: Start Deep Work Mode" },
+      { "command": "devToolkit.endDeepWorkMode",        "title": "Session Tracker: End Deep Work Mode" },
+      { "command": "devToolkit.exportSessionData",     "title": "Session Tracker: Export Data" },
+      { "command": "devToolkit.resetToday",            "title": "Session Tracker: Reset Today" },
+      { "command": "devToolkit.setDailyGoal",          "title": "Session Tracker: Set Daily Goal" },
+      { "command": "devToolkit.toggleSessionTracking", "title": "Session Tracker: Toggle Tracking" }
+    ],
+    "configuration": {
+      "title": "Session Tracker",
+      "properties": {
+        "devToolkit.sessionTracker.dailyGoalMinutes": {
+          "type": "number", "default": 120, "minimum": 15, "maximum": 720,
+          "description": "Daily coding goal in minutes."
+        },
+        "devToolkit.sessionTracker.idleThresholdMinutes": {
+          "type": "number", "default": 2, "minimum": 1, "maximum": 30,
+          "description": "Minutes of inactivity before marking as idle."
+        },
+        "devToolkit.sessionTracker.idleDetection": {
+          "type": "boolean", "default": true,
+          "description": "Enable idle detection."
+        },
+        "devToolkit.sessionTracker.engagedThresholdSeconds": {
+          "type": "number", "default": 30, "minimum": 5, "maximum": 300,
+          "description": "Seconds since last activity to count as engaged for efficiency."
+        },
+        "devToolkit.sessionTracker.flowStateThresholdMinutes": {
+          "type": "number", "default": 25, "minimum": 5, "maximum": 120,
+          "description": "Minutes of continuous focus to enter flow state."
+        },
+        "devToolkit.sessionTracker.breakReminderInterval": {
+          "type": "number", "default": 45, "minimum": 15, "maximum": 120,
+          "description": "Minutes between break reminders."
+        },
+        "devToolkit.sessionTracker.statusBarFormat": {
+          "type": "string", "default": "timeAndStreak",
+          "enum": ["timeAndStreak", "timeAndLanguage", "iconOnly"],
+          "description": "Status bar display format."
+        },
+        "devToolkit.sessionTracker.focusScore": {
+          "type": "object",
+          "default": { "enabled": true, "showInStatusBar": true },
+          "description": "Focus score configuration."
+        },
+        "devToolkit.sessionTracker.deepWork": {
+          "type": "object",
+          "default": {
+            "defaultDurationMinutes": 50,
+            "hideActivityBar": true,
+            "hideStatusBar": false,
+            "muteNotifications": true
+          },
+          "description": "Deep Work Mode preferences."
+        },
+        "devToolkit.sessionTracker.notifications": {
+          "type": "object",
+          "default": { "breakReminders": true, "goalReminders": true, "achievementToasts": true },
+          "description": "Notification preferences."
+        }
+      }
+    },
+    "menus": {
+      "commandPalette": [
+        { "command": "devToolkit.startSession" },
+        { "command": "devToolkit.endSession" },
+        { "command": "devToolkit.openSessionDashboard" },
+        { "command": "devToolkit.viewAchievements" },
+        { "command": "devToolkit.viewHistory" },
+        { "command": "devToolkit.addSessionNote" },
+        { "command": "devToolkit.openJournal" },
+        { "command": "devToolkit.startDeepWorkMode" },
+        { "command": "devToolkit.endDeepWorkMode" },
+        { "command": "devToolkit.exportSessionData" },
+        { "command": "devToolkit.resetToday" },
+        { "command": "devToolkit.setDailyGoal" },
+        { "command": "devToolkit.toggleSessionTracking" }
+      ],
+      "view/title": [
+        {
+          "submenu": "devToolkit.sessionNotesMenu",
+          "when": "view == devToolkit.sessionTracker",
+          "group": "navigation"
+        }
+      ],
+      "devToolkit.sessionNotesMenu": [
+        { "command": "devToolkit.addSessionNote", "group": "1_notes" },
+        { "command": "devToolkit.openJournal", "group": "1_notes" }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/codicons": "^0.0.35",
+    "typescript": "^5.3.0"
+  }
+}
