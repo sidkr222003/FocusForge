@@ -19,6 +19,12 @@ class HtmlRenderer {
 </article>`;
         })
             .join('');
+        const projects = (report.topProjects ?? [])
+            .map((p) => `<li><strong>${p.project}</strong>: ${(p.minutes / 60).toFixed(1)}h</li>`)
+            .join('');
+        const languages = (report.topLanguages ?? [])
+            .map((l) => `<li><strong>${l.language}</strong>: ${(l.minutes / 60).toFixed(1)}h</li>`)
+            .join('');
         return `<!doctype html>
 <html>
 <head>
@@ -32,7 +38,11 @@ class HtmlRenderer {
 </head>
 <body>
   <h1>Weekly Focus Report (${report.weekStart} -> ${report.weekEnd})</h1>
-  <p>Total sessions: ${report.totalSessions} | Total focused time: ${(report.totalMinutes / 60).toFixed(1)}h</p>
+  <p>Total sessions: ${report.totalSessions} | Total focused time: ${(report.totalMinutes / 60).toFixed(1)}h | Pomodoros: ${report.pomodorosCompleted ?? 0} | Commits: ${report.totalCommits ?? 0}</p>
+  <h2>Top projects</h2>
+  ${projects ? `<ul>${projects}</ul>` : '<p>No project data yet.</p>'}
+  <h2>Top languages</h2>
+  ${languages ? `<ul>${languages}</ul>` : '<p>No language data yet.</p>'}
   ${issues || '<p>No issues logged this week.</p>'}
 </body>
 </html>`;

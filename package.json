@@ -1,22 +1,62 @@
 {
-  "name": "coding-session-tracker",
-  "displayName": "Coding Session Tracker",
-  "description": "Track deep-work sessions with live dashboard: heatmap, achievements, badges, goals, history & more.",
-  "version": "1.0.0",
+  "name": "focusforge",
+  "displayName": "FocusForge: Coding Session Tracker",
+  "description": "A local-first VS Code productivity dashboard for focus time, Pomodoro cycles, projects, GitHub issues, commits, planner sessions, reports, and AI insights.",
+  "version": "1.1.0",
   "publisher": "devtoolkit",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidkr222003/FocusForge.git"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
+    "Visualization",
+    "SCM Providers",
+    "Education",
     "Other"
+  ],
+  "keywords": [
+    "productivity",
+    "focus",
+    "pomodoro",
+    "time tracking",
+    "coding sessions",
+    "github",
+    "git",
+    "issues",
+    "commits",
+    "analytics",
+    "deep work",
+    "planner",
+    "reports",
+    "ai insights",
+    "students"
   ],
   "icon": "images/icon.png",
   "activationEvents": [
     "onStartupFinished",
+    "onView:devToolkit.sessionTracker",
     "onView:devToolkit.issueView",
+    "onCommand:devToolkit.startSession",
+    "onCommand:devToolkit.endSession",
+    "onCommand:devToolkit.openSessionDashboard",
+    "onCommand:devToolkit.viewAchievements",
+    "onCommand:devToolkit.viewHistory",
+    "onCommand:devToolkit.addSessionNote",
+    "onCommand:devToolkit.openJournal",
+    "onCommand:devToolkit.startDeepWorkMode",
+    "onCommand:devToolkit.endDeepWorkMode",
+    "onCommand:devToolkit.exportSessionData",
+    "onCommand:devToolkit.resetToday",
+    "onCommand:devToolkit.setDailyGoal",
+    "onCommand:devToolkit.planner.exportIcs",
+    "onCommand:devToolkit.toggleSessionTracking",
     "onCommand:devToolkit.issues.refresh",
     "onCommand:devToolkit.issues.connectGitHub",
     "onCommand:devToolkit.issues.disconnectGitHub",
+    "onCommand:devToolkit.issues.newIssue",
     "onCommand:devToolkit.issues.generateReport",
     "onCommand:devToolkit.issues.generateReportLast",
     "onCommand:devToolkit.issues.exportLog"
@@ -104,6 +144,10 @@
       {
         "command": "devToolkit.setDailyGoal",
         "title": "Session Tracker: Set Daily Goal"
+      },
+      {
+        "command": "devToolkit.planner.exportIcs",
+        "title": "Session Tracker: Export Planned Sessions (.ics)"
       },
       {
         "command": "devToolkit.toggleSessionTracking",
@@ -218,6 +262,74 @@
             "achievementToasts": true
           },
           "description": "Notification preferences."
+        },
+        "devToolkit.sessionTracker.pomodoro": {
+          "type": "object",
+          "default": {
+            "enabled": true,
+            "workMinutes": 25,
+            "shortBreakMinutes": 5,
+            "longBreakMinutes": 15,
+            "autoAdvance": true,
+            "sound": "bell"
+          },
+          "description": "Pomodoro mode configuration."
+        },
+        "devToolkit.sessionTracker.projects": {
+          "type": "object",
+          "default": {
+            "enabled": true,
+            "useGitRemote": true
+          },
+          "description": "Project analytics preferences."
+        },
+        "devToolkit.sessionTracker.planner": {
+          "type": "object",
+          "default": {
+            "enabled": true,
+            "reminderMinutesBefore": 5,
+            "exportIcs": true
+          },
+          "description": "Session planner preferences."
+        },
+        "devToolkit.sessionTracker.audio": {
+          "type": "object",
+          "default": {
+            "enabled": false,
+            "defaultTrack": "rain",
+            "volume": 0.4,
+            "autoStartWithSession": false
+          },
+          "description": "Ambient focus audio preferences."
+        },
+        "devToolkit.sessionTracker.reports": {
+          "type": "object",
+          "default": {
+            "enabled": true,
+            "format": "markdown",
+            "outputPath": ".vscode/session-reports",
+            "autoGenerate": true
+          },
+          "description": "Weekly and monthly report preferences."
+        },
+        "devToolkit.sessionTracker.leaderboard": {
+          "type": "object",
+          "default": {
+            "gistId": "",
+            "teamGistIds": [],
+            "name": "",
+            "avatar": "◆"
+          },
+          "description": "Opt-in GitHub Gist leaderboard preferences."
+        },
+        "devToolkit.sessionTracker.aiInsights": {
+          "type": "object",
+          "default": {
+            "enabled": false,
+            "model": "openai/gpt-4.1-mini",
+            "generateOn": "sunday"
+          },
+          "description": "Opt-in GitHub Models weekly insight preferences. Uses the existing stored GitHub token."
         }
       }
     },
@@ -258,6 +370,9 @@
         },
         {
           "command": "devToolkit.setDailyGoal"
+        },
+        {
+          "command": "devToolkit.planner.exportIcs"
         },
         {
           "command": "devToolkit.toggleSessionTracking"
@@ -301,6 +416,7 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.9.1",
     "typescript": "^5.3.0"
   }
 }

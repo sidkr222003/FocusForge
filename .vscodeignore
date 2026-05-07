@@ -1,0 +1,17 @@
+.git/**
+.github/**
+.vscode/**
+*.vsix
+npm-debug.log
+yarn-error.log
+
+src/**/*.ts
+!src/ui/**
+!src/issueLog/webview/**
+
+tsconfig.json
+package-lock.json
+
+node_modules/@types/**
+node_modules/typescript/**
+node_modules/@vscode/vsce/**

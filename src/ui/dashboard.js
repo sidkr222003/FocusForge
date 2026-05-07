@@ -769,6 +769,15 @@
     return d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
   }
 
+  function escapeText(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
   // ══════════════════════════════════════════════════════════════
   // DOM
   // ══════════════════════════════════════════════════════════════
@@ -1075,6 +1084,121 @@
       `;
       listEl.appendChild(row);
     });
+  }
+
+  function renderProjects(projects) {
+    const list = $('projectList');
+    if (!list) return;
+    list.innerHTML = '';
+    const rows = (projects || []).slice(0, 8);
+    if (!rows.length) {
+      list.innerHTML = '<div class="lang-empty">No project data yet.</div>';
+      return;
+    }
+    const max = Math.max(...rows.map(p => p.weekMinutes || p.totalMinutes || 0), 1);
+    rows.forEach(project => {
+      const minutes = project.totalMinutes || 0;
+      const week = project.weekMinutes || 0;
+      const row = document.createElement('div');
+      row.className = 'project-row';
+      row.innerHTML = `
+        <div class="project-main">
+          <div class="project-title">${escapeText(project.displayName || project.projectId)}</div>
+          <div class="project-meta">${fmt(minutes * 60)} all-time · ${fmt(week * 60)} this week · ${project.sessions || 0} sessions</div>
+          <div class="project-bar"><div class="project-bar-fill" style="width:${Math.max(3, Math.round((week / max) * 100))}%"></div></div>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function renderPlanner(plans) {
+    const list = $('plannerList');
+    if (!list) return;
+    list.innerHTML = '';
+    const rows = (plans || [])
+      .slice()
+      .sort((a,b) => new Date(`${a.date}T${a.startTime}:00`) - new Date(`${b.date}T${b.startTime}:00`))
+      .slice(0, 12);
+    if (!rows.length) {
+      list.innerHTML = '<div class="lang-empty">No planned sessions yet.</div>';
+      return;
+    }
+    rows.forEach(plan => {
+      const row = document.createElement('div');
+      row.className = `planner-row${plan.fulfilledSessionId ? ' done' : ''}`;
+      row.innerHTML = `
+        <div class="planner-main">
+          <div class="planner-title">${escapeText(plan.label || 'Planned coding session')}</div>
+          <div class="planner-meta">${escapeText(plan.date)} · ${escapeText(plan.startTime)} · ${plan.durationMinutes}m${plan.fulfilledSessionId ? ' · fulfilled' : ''}</div>
+        </div>
+        <button class="icon-btn" title="Delete plan" data-delete-plan="${escapeText(plan.id)}"><i class="codicon codicon-trash"></i></button>
+      `;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('[data-delete-plan]').forEach(btn => {
+      btn.addEventListener('click', () => vscode.postMessage({ type: 'deletePlan', id: btn.getAttribute('data-delete-plan') }));
+    });
+  }
+
+  function renderPomodoro(history) {
+    const today = new Date().toDateString();
+    const sessions = history.filter(s => new Date(s.date).toDateString() === today);
+    const count = sessions.reduce((sum, s) => sum + (s.pomodorosCompleted || 0), 0);
+    const focusSeconds = sessions.reduce((sum, s) => sum + (s.pomodoroFocusSeconds || 0), 0);
+    const ring = $('pomodoroRing');
+    if (ring) {
+      const pct = Math.min(100, (count % 4) * 25);
+      ring.setAttribute('stroke-dashoffset', (314.16 - (pct / 100) * 314.16).toFixed(2));
+      ring.setAttribute('stroke', count >= 4 ? 'var(--accent-green)' : 'var(--accent-orange)');
+    }
+    if ($('pomodoroCount')) $('pomodoroCount').textContent = count;
+    if ($('pomodoroStatus')) $('pomodoroStatus').textContent = count >= 4 ? 'Pomodoro rhythm complete' : 'Focus rhythm building';
+    if ($('pomodoroSub')) $('pomodoroSub').textContent = `${fmt(focusSeconds)} tracked inside Pomodoro work blocks today.`;
+  }
+
+  function renderInsight(insights) {
+    const card = $('insightCard');
+    if (!card) return;
+    const latest = (insights || [])[0];
+    if (!latest) {
+      card.innerHTML = 'No AI insight yet. Enable AI insights and generate one when you want a weekly coaching note.';
+      return;
+    }
+    card.innerHTML = `
+      <div><strong>${new Date(latest.generatedAt).toLocaleDateString()}</strong></div>
+      <ul>${(latest.bullets || []).map(b => `<li>${escapeText(b)}</li>`).join('')}</ul>
+      <div><strong>Suggestion:</strong> ${escapeText(latest.suggestion || '')}</div>
+    `;
+  }
+
+  function renderLeaderboard(rows, updatedAt) {
+    const list = $('leaderboardList');
+    if (!list) return;
+    list.innerHTML = '';
+    const data = rows || lastLeaderboardRows || [];
+    if (!data.length) {
+      list.innerHTML = '<div class="lang-empty">Refresh to load your opt-in Gist leaderboard.</div>';
+      return;
+    }
+    data.forEach(row => {
+      const item = document.createElement('div');
+      item.className = 'leaderboard-row';
+      item.innerHTML = `
+        <div class="leaderboard-rank">#${row.rank}</div>
+        <div class="leaderboard-main">
+          <div class="leaderboard-name">${escapeText(row.avatar || '◆')} ${escapeText(row.name || 'Teammate')}</div>
+          <div class="leaderboard-meta">${row.todayMinutes || 0}m today · ${row.streak || 0}d streak · ${row.focusScore || 0} focus</div>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+    if (updatedAt) {
+      const stamp = document.createElement('div');
+      stamp.className = 'leaderboard-meta';
+      stamp.textContent = `Updated ${new Date(updatedAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+      list.appendChild(stamp);
+    }
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -1399,6 +1523,9 @@
         <span class="hi-eff">${eff}%</span>
         ${focusBadge}
         ${langLabel ? `<span class="hi-lang">${langLabel}</span>` : ''}
+        ${session.project?.displayName ? `<span class="hi-lang">${escapeText(session.project.displayName)}</span>` : ''}
+        ${session.commits?.length ? `<span class="hi-note">⑂ ${session.commits.length}</span>` : ''}
+        ${session.pomodorosCompleted ? `<span class="hi-note">🍅 ${session.pomodorosCompleted}</span>` : ''}
         ${session.note ? `<span class="hi-note">note</span>` : ''}
       `;
       item.addEventListener('click', () => {
@@ -1470,6 +1597,9 @@
       if (session.note) {
         noteEl.classList.remove('hidden');
         noteEl.innerHTML = `
+          ${session.project?.displayName ? `<div><strong>Project</strong> · ${escapeText(session.project.displayName)}</div>` : ''}
+          ${session.commits?.length ? `<div><strong>Commits</strong> · ${session.commits.map(c => `${escapeText(c.hash)} ${escapeText(c.message)}`).join('<br>')}</div>` : ''}
+          ${session.pomodorosCompleted ? `<div><strong>Pomodoros</strong> · ${session.pomodorosCompleted}</div>` : ''}
           <div><strong>Note</strong> · ${MOOD_LABELS[session.note.mood] || '🙂 Ok'}</div>
           <div>${session.note.summary}</div>
           ${session.note.blockers ? `<div>${session.note.blockers}</div>` : ''}
@@ -1477,6 +1607,9 @@
       } else {
         noteEl.classList.remove('hidden');
         noteEl.innerHTML = `
+          ${session.project?.displayName ? `<div><strong>Project</strong> · ${escapeText(session.project.displayName)}</div>` : ''}
+          ${session.commits?.length ? `<div><strong>Commits</strong> · ${session.commits.map(c => `${escapeText(c.hash)} ${escapeText(c.message)}`).join('<br>')}</div>` : ''}
+          ${session.pomodorosCompleted ? `<div><strong>Pomodoros</strong> · ${session.pomodorosCompleted}</div>` : ''}
           <div><strong>Note</strong> · Not added</div>
           <button class="secondary-btn" id="detailAddNote">Add note</button>
         `;
@@ -1590,6 +1723,10 @@
   let lastFocusInStatus = true;
   let lastDeepWorkActive = false;
   let lastGoal       = uiState.goalMinutes || 120;
+  let lastProjects   = [];
+  let lastPlans      = [];
+  let lastInsights   = [];
+  let lastLeaderboardRows = [];
   let goalInputDirty = false;
   let goalDraftMinutes = null;
   let goalPendingMinutes = null;
@@ -1608,6 +1745,9 @@
   function render(data) {
     const {
       history,
+      projects,
+      plannedSessions,
+      aiInsights,
       isTracking,
       efficiency,
       liveSession,
@@ -1652,6 +1792,9 @@
     }
 
     lastHistory    = incomingHistory;
+    lastProjects   = projects || [];
+    lastPlans      = plannedSessions || [];
+    lastInsights   = aiInsights || [];
     lastTracking   = isTracking ?? true;
     lastEfficiency = efficiency ?? 100;
     lastSession    = liveSession ?? null;
@@ -1693,6 +1836,11 @@
     renderBadges(lastHistory);
     renderHistory(lastHistory);
     renderLanguageLeaderboard(lastHistory);
+    renderProjects(lastProjects);
+    renderPlanner(lastPlans);
+    renderPomodoro(lastHistory);
+    renderInsight(lastInsights);
+    renderLeaderboard(lastLeaderboardRows);
     renderJournal(lastHistory);
     syncAddNoteVisibility();
     updateToggleBtn(lastTracking);
@@ -1931,6 +2079,82 @@
     });
   }
 
+  const todayIso = new Date().toISOString().slice(0, 10);
+  if ($('planDate')) $('planDate').value = todayIso;
+  if ($('planTime')) {
+    const nextHour = new Date(Date.now() + 3600000);
+    $('planTime').value = nextHour.toTimeString().slice(0, 5);
+  }
+  if ($('addPlanBtn')) {
+    $('addPlanBtn').addEventListener('click', () => {
+      const duration = parseInt($('planDuration').value, 10);
+      vscode.postMessage({
+        type: 'addPlan',
+        plan: {
+          date: $('planDate').value,
+          startTime: $('planTime').value,
+          durationMinutes: Number.isFinite(duration) ? duration : 60,
+          label: $('planLabel').value.trim(),
+        },
+      });
+      $('planLabel').value = '';
+    });
+  }
+  if ($('exportPlansBtn')) {
+    $('exportPlansBtn').addEventListener('click', () => vscode.postMessage({ type: 'exportPlans' }));
+  }
+  if ($('refreshLeaderboardBtn')) {
+    $('refreshLeaderboardBtn').addEventListener('click', () => vscode.postMessage({ type: 'refreshLeaderboard' }));
+  }
+  if ($('publishLeaderboardBtn')) {
+    $('publishLeaderboardBtn').addEventListener('click', () => vscode.postMessage({ type: 'publishLeaderboard' }));
+  }
+  if ($('generateInsightBtn')) {
+    $('generateInsightBtn').addEventListener('click', () => vscode.postMessage({ type: 'generateAiInsight' }));
+  }
+
+  let audioContext = null;
+  let audioNodes = [];
+  let audioPlaying = false;
+  function stopAudio() {
+    audioNodes.forEach(node => { try { node.stop?.(); node.disconnect?.(); } catch {} });
+    audioNodes = [];
+    audioPlaying = false;
+    const icon = $('audioToggleBtn')?.querySelector('.codicon');
+    if (icon) icon.className = 'codicon codicon-play';
+  }
+  function startAudio() {
+    stopAudio();
+    audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+    const gain = audioContext.createGain();
+    gain.gain.value = parseFloat($('audioVolume')?.value || '0.4');
+    gain.connect(audioContext.destination);
+    const osc = audioContext.createOscillator();
+    const track = $('audioTrackSelect')?.value || 'rain';
+    osc.type = track === 'lofi' ? 'sawtooth' : track === 'fireplace' ? 'triangle' : 'sine';
+    osc.frequency.value = ({ rain: 180, ocean: 90, fireplace: 130, cafe: 220, forest: 260, lofi: 75 })[track] || 180;
+    osc.connect(gain);
+    osc.start();
+    audioNodes = [osc, gain];
+    audioPlaying = true;
+    const icon = $('audioToggleBtn')?.querySelector('.codicon');
+    if (icon) icon.className = 'codicon codicon-debug-pause';
+  }
+  if ($('audioToggleBtn')) {
+    $('audioToggleBtn').addEventListener('click', () => audioPlaying ? stopAudio() : startAudio());
+  }
+  if ($('audioVolume')) {
+    $('audioVolume').addEventListener('input', () => {
+      const gain = audioNodes.find(node => node.gain);
+      if (gain) gain.gain.value = parseFloat($('audioVolume').value);
+    });
+  }
+  if ($('audioTrackSelect')) {
+    $('audioTrackSelect').addEventListener('change', () => {
+      if (audioPlaying) startAudio();
+    });
+  }
+
   // ══════════════════════════════════════════════════════════════
   // MESSAGE HANDLER
   // ══════════════════════════════════════════════════════════════
@@ -1944,6 +2168,9 @@
       activateTab(msg.tab);
     } else if (msg.type === 'openNoteComposer') {
       openNoteComposer(msg.sessionId);
+    } else if (msg.type === 'leaderboard') {
+      lastLeaderboardRows = msg.rows || [];
+      renderLeaderboard(lastLeaderboardRows, msg.updatedAt);
     }
   });
 

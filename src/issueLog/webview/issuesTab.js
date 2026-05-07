@@ -85,6 +85,9 @@ function renderRepos(repos, selectedRepo = state.repo, repoOptions = []) {
   const repoValues = (repos || []).map((repo) => typeof repo === 'string' ? repo : repo.slug).filter(Boolean);
   const uniqueRepos = Array.from(new Set([selectedRepo, ...repoValues].filter(Boolean)));
   state.repo = selectedRepo || '';
+  if (uniqueRepos.length) {
+    el('gitBanner').classList.add('hidden');
+  }
   el('repoSelect').innerHTML = uniqueRepos.length
     ? `${state.repo ? '' : '<option value="">Select detected repo...</option>'}${uniqueRepos
         .map((repo) => {
@@ -104,7 +107,11 @@ function renderRepoHint(repos = []) {
   }
   const option = state.repoOptions.get(state.repo);
   const folder = option?.folder ? ` · ${option.folder}` : '';
-  const source = option?.remote ? ` · ${option.remote}` : repos.includes(state.repo) ? ' · detected/account' : '';
+  const source = option?.source === 'remote-v'
+    ? ` · git remote -v (${option.remote || 'remote'})`
+    : option?.remote
+      ? ` · ${option.remote}`
+      : repos.includes(state.repo) ? ' · detected/account' : '';
   el('repoHint').textContent = `${state.repo}${source}${folder}`;
 }
 
@@ -171,7 +178,7 @@ function applyAccess() {
 }
 
 function renderGitStatus(status) {
-  const shouldShow = status && !status.active;
+  const shouldShow = status && !status.active && !state.repo;
   el('gitBanner').classList.toggle('hidden', !shouldShow);
 }
 

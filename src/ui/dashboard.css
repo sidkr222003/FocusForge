@@ -67,6 +67,7 @@ body {
   background: var(--vscode-sideBar-background, #252526);
   line-height: 1.5;
   overflow-x: hidden;
+  padding-bottom: 38px;
   user-select: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -140,6 +141,103 @@ body {
   background: rgba(244,135,113,.12);
 }
 .icon-btn.paused { color: var(--accent-red); }
+.wide-btn { width: 100%; justify-content: center; margin-top: 8px; }
+
+.pomodoro-panel,
+.leaderboard-row,
+.planner-row,
+.project-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pomodoro-ring { position: relative; width: 92px; height: 92px; flex: 0 0 92px; }
+.pomodoro-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.pomodoro-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.pomodoro-center span { font-size: 24px; font-weight: 800; }
+.pomodoro-center small,
+.pomodoro-copy span { color: var(--vscode-descriptionForeground); font-size: 11px; }
+.pomodoro-copy { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+
+.planner-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 64px;
+  gap: 6px;
+}
+.planner-form #planLabel,
+.planner-form #addPlanBtn { grid-column: span 3; }
+
+.planner-list,
+.project-list,
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.planner-row,
+.project-row,
+.leaderboard-row,
+.insight-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  padding: 8px;
+}
+.planner-row.done { border-color: rgba(34,197,94,.35); }
+.planner-main,
+.project-main,
+.leaderboard-main { flex: 1; min-width: 0; }
+.planner-title,
+.project-title,
+.leaderboard-name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.planner-meta,
+.project-meta,
+.leaderboard-meta,
+.insight-card { color: var(--vscode-descriptionForeground); font-size: 11px; }
+.project-bar { height: 4px; margin-top: 6px; border-radius: 2px; background: var(--track-bg); overflow: hidden; }
+.project-bar-fill { height: 100%; background: var(--accent-blue); }
+.leaderboard-rank { width: 24px; font-weight: 800; color: var(--accent); }
+.insight-card ul { margin-left: 16px; }
+
+.audio-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--vscode-sideBar-background);
+  z-index: 20;
+}
+.audio-select {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--border));
+}
+.audio-volume { width: 74px; }
 
 /* ══ LIVE STRIP ════════════════════════════════════════════════ */
 .live-strip {

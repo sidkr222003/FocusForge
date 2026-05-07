@@ -208,7 +208,10 @@ class GitHubClient {
                     message: "VS Code's built-in Git extension is not available."
                 };
             }
-            return { available: true, active: extension.isActive };
+            const repositories = extension.isActive
+                ? extension.exports?.getAPI?.(1)?.repositories?.length ?? 0
+                : 0;
+            return { available: true, active: extension.isActive, repositories };
         }
         catch (error) {
             return {
@@ -228,6 +231,8 @@ class GitHubClient {
             if (!extension.isActive) {
                 await extension.activate();
             }
+            await vscode.commands.executeCommand('workbench.view.scm').then(undefined, () => undefined);
+            await new Promise((resolve) => setTimeout(resolve, 350));
             return this.getGitExtensionStatus();
         }
         catch (error) {
@@ -304,7 +309,7 @@ class GitHubClient {
             return undefined;
         }
     }
-    static async findGitChildren(root) {
+    static async findGitChildren(root, depth = 1) {
         const found = [];
         try {
             const entries = await vscode.workspace.fs.readDirectory(root);
@@ -315,6 +320,9 @@ class GitHubClient {
                 const child = vscode.Uri.joinPath(root, name);
                 if ((0, node_fs_1.existsSync)(vscode.Uri.joinPath(child, '.git').fsPath)) {
                     found.push(child.fsPath);
+                }
+                else if (depth < 3) {
+                    found.push(...(await this.findGitChildren(child, depth + 1)));
                 }
             }
         }
@@ -328,21 +336,21 @@ class GitHubClient {
             const { stdout: rootStdout } = await exec('git', ['rev-parse', '--show-toplevel'], { cwd: folder });
             const gitRoot = rootStdout.trim() || folder;
             const remotes = [
-                { name: 'upstream', url: await this.remoteUrl('upstream', gitRoot, exec) },
-                { name: 'origin', url: await this.remoteUrl('origin', gitRoot, exec) },
-                ...(await this.remoteUrls(gitRoot, exec)).map((url) => ({ name: 'remote', url }))
+                { name: 'upstream', url: await this.remoteUrl('upstream', gitRoot, exec), source: 'workspace' },
+                { name: 'origin', url: await this.remoteUrl('origin', gitRoot, exec), source: 'workspace' },
+                ...(await this.remoteUrls(gitRoot, exec)).map((remote) => ({ ...remote, source: 'remote-v' }))
             ].filter((remote) => Boolean(remote.url));
             const repos = new Map();
             for (const remote of remotes) {
                 const slug = this.parseGitHubSlug(remote.url);
                 if (slug) {
-                    repos.set(slug, { slug, folder: gitRoot, remote: remote.name });
+                    repos.set(slug, { slug, folder: gitRoot, remote: remote.name, source: remote.source });
                 }
             }
             return [...repos.values()];
         }
         catch {
-            return [];
+            return this.detectReposFromRemoteV(folder, exec);
         }
     }
     static async remoteUrl(remote, cwd, exec) {
@@ -359,12 +367,30 @@ class GitHubClient {
             const { stdout } = await exec('git', ['remote', '-v'], { cwd });
             return stdout
                 .split(/\r?\n/)
-                .map((line) => line.trim().split(/\s+/)[1])
-                .filter((url) => Boolean(url));
+                .map((line) => {
+                const [name, url] = line.trim().split(/\s+/);
+                return { name: name || 'remote', url };
+            })
+                .filter((remote) => Boolean(remote.url));
         }
         catch {
             return [];
         }
+    }
+    static async detectReposFromRemoteV(folder, exec) {
+        const repos = new Map();
+        for (const remote of await this.remoteUrls(folder, exec)) {
+            const slug = this.parseGitHubSlug(remote.url);
+            if (slug) {
+                repos.set(slug, {
+                    slug,
+                    folder,
+                    remote: remote.name,
+                    source: 'remote-v'
+                });
+            }
+        }
+        return [...repos.values()];
     }
     static parseGitHubSlug(url) {
         const match = url.match(/github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?(?:[/#?].*)?$/) ??

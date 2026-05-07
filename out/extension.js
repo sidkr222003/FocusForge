@@ -51,7 +51,7 @@ function activate(context) {
     const reports = new WeeklyReportGenerator_1.WeeklyReportGenerator(context, store);
     // Existing registrations
     (0, sessionTimer_1.registerSessionTimer)(context);
-    (0, sessionTracker_1.registerSessionTracker)(context);
+    (0, sessionTracker_1.registerSessionTracker)(context, () => store.getToken());
     (0, deepWorkMode_1.registerDeepWorkMode)(context);
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(IssueViewController_1.IssueViewController.viewId, controller));
     context.subscriptions.push(vscode.commands.registerCommand("devToolkit.issues.refresh", () => controller.refresh()), vscode.commands.registerCommand("devToolkit.issues.connectGitHub", () => controller.connectGitHub()), vscode.commands.registerCommand("devToolkit.issues.disconnectGitHub", async () => {

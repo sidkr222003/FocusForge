@@ -4,20 +4,39 @@ import { IssueStore } from '../issueLog/IssueStore';
 import { SessionEntry, WeeklyReport } from '../issueLog/types';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { HtmlRenderer } from './HtmlRenderer';
+import type { SessionRecord } from '../sessionTimer';
 
-const SESSION_KEY = 'devToolkit.sessions';
+const SESSION_KEY = 'devToolkit.sessionHistory';
 
 class SessionStore {
   constructor(private readonly ctx: vscode.ExtensionContext) {}
 
   getRange(from: number, to: number): SessionEntry[] {
-    const all = this.ctx.globalState.get<SessionEntry[]>(SESSION_KEY) ?? [];
-    return all.filter((s) => s.startedAt >= from && s.startedAt <= to);
+    const all = this.ctx.globalState.get<SessionRecord[]>(SESSION_KEY) ?? [];
+    return all
+      .map((s) => this.toEntry(s))
+      .filter((s) => s.startedAt >= from && s.startedAt <= to);
   }
 
   getById(id: string): SessionEntry | undefined {
-    const all = this.ctx.globalState.get<SessionEntry[]>(SESSION_KEY) ?? [];
-    return all.find((s) => s.id === id);
+    const all = this.ctx.globalState.get<SessionRecord[]>(SESSION_KEY) ?? [];
+    const found = all.find((s) => s.id === id);
+    return found ? this.toEntry(found) : undefined;
+  }
+
+  private toEntry(session: SessionRecord): SessionEntry {
+    const startedAt = new Date(session.date).getTime();
+    return {
+      id: session.id,
+      startedAt,
+      endedAt: startedAt + (session.totalTime ?? 0) * 1000,
+      totalMinutes: Math.round((session.activeTime ?? 0) / 60),
+      focusScore: session.focusScore,
+      language: session.language,
+      project: session.project?.displayName,
+      commits: session.commits?.length ?? 0,
+      pomodorosCompleted: session.pomodorosCompleted ?? 0,
+    };
   }
 }
 
@@ -93,6 +112,20 @@ export class WeeklyReportGenerator {
       .slice(0, 5);
   }
 
+  private topProjects(sessions: SessionEntry[]): Array<{ project: string; minutes: number }> {
+    const map = new Map<string, number>();
+    for (const session of sessions) {
+      if (!session.project) {
+        continue;
+      }
+      map.set(session.project, (map.get(session.project) ?? 0) + session.totalMinutes);
+    }
+    return [...map.entries()]
+      .map(([project, minutes]) => ({ project, minutes }))
+      .sort((a, b) => b.minutes - a.minutes)
+      .slice(0, 5);
+  }
+
   private goalPerformance(sessions: SessionEntry[]): WeeklyReport['goalPerformance'] {
     const byDay = new Map<string, number>();
     for (const s of sessions) {
@@ -141,6 +174,9 @@ export class WeeklyReportGenerator {
       totalSessions: sessions.length,
       avgFocusScore: this.avgFocusScore(sessions),
       topLanguages: this.topLanguages(sessions),
+      topProjects: this.topProjects(sessions),
+      totalCommits: sessions.reduce((sum, session) => sum + (session.commits ?? 0), 0),
+      pomodorosCompleted: sessions.reduce((sum, session) => sum + (session.pomodorosCompleted ?? 0), 0),
       issuesWorkedOn: [...issueMap.values()],
       achievementsUnlocked: IssueAchievements.unlock(completionLogs),
       goalPerformance: this.goalPerformance(sessions)

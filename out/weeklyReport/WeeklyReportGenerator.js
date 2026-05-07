@@ -38,18 +38,35 @@ const vscode = __importStar(require("vscode"));
 const IssueAchievements_1 = require("../issueLog/IssueAchievements");
 const MarkdownRenderer_1 = require("./MarkdownRenderer");
 const HtmlRenderer_1 = require("./HtmlRenderer");
-const SESSION_KEY = 'devToolkit.sessions';
+const SESSION_KEY = 'devToolkit.sessionHistory';
 class SessionStore {
     constructor(ctx) {
         this.ctx = ctx;
     }
     getRange(from, to) {
         const all = this.ctx.globalState.get(SESSION_KEY) ?? [];
-        return all.filter((s) => s.startedAt >= from && s.startedAt <= to);
+        return all
+            .map((s) => this.toEntry(s))
+            .filter((s) => s.startedAt >= from && s.startedAt <= to);
     }
     getById(id) {
         const all = this.ctx.globalState.get(SESSION_KEY) ?? [];
-        return all.find((s) => s.id === id);
+        const found = all.find((s) => s.id === id);
+        return found ? this.toEntry(found) : undefined;
+    }
+    toEntry(session) {
+        const startedAt = new Date(session.date).getTime();
+        return {
+            id: session.id,
+            startedAt,
+            endedAt: startedAt + (session.totalTime ?? 0) * 1000,
+            totalMinutes: Math.round((session.activeTime ?? 0) / 60),
+            focusScore: session.focusScore,
+            language: session.language,
+            project: session.project?.displayName,
+            commits: session.commits?.length ?? 0,
+            pomodorosCompleted: session.pomodorosCompleted ?? 0,
+        };
     }
 }
 class WeeklyReportGenerator {
@@ -116,6 +133,19 @@ class WeeklyReportGenerator {
             .sort((a, b) => b.minutes - a.minutes)
             .slice(0, 5);
     }
+    topProjects(sessions) {
+        const map = new Map();
+        for (const session of sessions) {
+            if (!session.project) {
+                continue;
+            }
+            map.set(session.project, (map.get(session.project) ?? 0) + session.totalMinutes);
+        }
+        return [...map.entries()]
+            .map(([project, minutes]) => ({ project, minutes }))
+            .sort((a, b) => b.minutes - a.minutes)
+            .slice(0, 5);
+    }
     goalPerformance(sessions) {
         const byDay = new Map();
         for (const s of sessions) {
@@ -161,6 +191,9 @@ class WeeklyReportGenerator {
             totalSessions: sessions.length,
             avgFocusScore: this.avgFocusScore(sessions),
             topLanguages: this.topLanguages(sessions),
+            topProjects: this.topProjects(sessions),
+            totalCommits: sessions.reduce((sum, session) => sum + (session.commits ?? 0), 0),
+            pomodorosCompleted: sessions.reduce((sum, session) => sum + (session.pomodorosCompleted ?? 0), 0),
             issuesWorkedOn: [...issueMap.values()],
             achievementsUnlocked: IssueAchievements_1.IssueAchievements.unlock(completionLogs),
             goalPerformance: this.goalPerformance(sessions)

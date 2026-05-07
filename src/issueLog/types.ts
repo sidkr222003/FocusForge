@@ -54,6 +54,9 @@ export interface WeeklyReport {
   totalSessions: number;
   avgFocusScore: number;
   topLanguages: Array<{ language: string; minutes: number }>;
+  topProjects?: Array<{ project: string; minutes: number }>;
+  totalCommits?: number;
+  pomodorosCompleted?: number;
   issuesWorkedOn: Array<{
     issue: Pick<GitHubIssue, 'number' | 'title' | 'htmlUrl' | 'labels'>;
     repoSlug: string;
@@ -81,4 +84,7 @@ export interface SessionEntry {
   totalMinutes: number;
   focusScore?: number;
   language?: string;
+  project?: string;
+  commits?: number;
+  pomodorosCompleted?: number;
 }

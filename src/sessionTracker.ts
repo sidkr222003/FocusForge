@@ -24,11 +24,19 @@ import {
   type SessionNotePayload,
 } from "./features/sessionNotes";
 import { getDeepWorkState } from "./features/deepWorkMode";
+import { generateAiInsight, getAiInsightHistory, saveAiInsight } from "./features/aiInsights";
+import { loadLeaderboardRows, publishLeaderboardStat, type LeaderboardRow } from "./features/leaderboard";
+import { createPlan, exportPlansAsIcs, getPlannedSessions, savePlannedSessions } from "./features/planner";
+import { summarizeProjects } from "./features/projectAnalytics";
 
-export function registerSessionTracker(context: vscode.ExtensionContext) {
+export function registerSessionTracker(
+  context: vscode.ExtensionContext,
+  getGithubToken?: () => Promise<string | undefined>
+) {
   let provider: SessionTrackerViewProvider;
   const refreshAll = () => provider?.refresh();
-  provider = new SessionTrackerViewProvider(context, refreshAll);
+  provider = new SessionTrackerViewProvider(context, refreshAll, getGithubToken);
+  const remindedPlans = new Set<string>();
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
@@ -37,6 +45,34 @@ export function registerSessionTracker(context: vscode.ExtensionContext) {
       { webviewOptions: { retainContextWhenHidden: true } }
     )
   );
+
+  const plannerReminder = setInterval(() => {
+    const config = vscode.workspace.getConfiguration("devToolkit.sessionTracker");
+    const planner = config.get<{ enabled?: boolean; reminderMinutesBefore?: number }>("planner", {});
+    if (planner.enabled === false) {
+      return;
+    }
+    const leadMs = Math.max(0, planner.reminderMinutesBefore ?? 5) * 60000;
+    const now = Date.now();
+    for (const plan of getPlannedSessions(context.globalState)) {
+      if (plan.fulfilledSessionId || remindedPlans.has(plan.id)) {
+        continue;
+      }
+      const start = new Date(`${plan.date}T${plan.startTime}:00`).getTime();
+      if (start >= now && start - now <= leadMs + 30000) {
+        remindedPlans.add(plan.id);
+        vscode.window.showInformationMessage(
+          `Planned session "${plan.label || "Coding session"}" starts in ${Math.max(1, Math.round((start - now) / 60000))} min.`,
+          "Open Tracker"
+        ).then((choice) => {
+          if (choice === "Open Tracker") {
+            focusAndNavigate("goals");
+          }
+        });
+      }
+    }
+  }, 30000);
+  context.subscriptions.push({ dispose: () => clearInterval(plannerReminder) });
 
   const focusAndNavigate = (tab: string) => {
     vscode.commands.executeCommand("devToolkit.sessionTracker.focus");
@@ -193,6 +229,19 @@ export function registerSessionTracker(context: vscode.ExtensionContext) {
       );
     })
   );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("devToolkit.planner.exportIcs", async () => {
+      const file = await exportPlansAsIcs(getPlannedSessions(context.globalState));
+      if (file) {
+        vscode.window.showInformationMessage("Planned sessions exported.", "Open").then((choice) => {
+          if (choice === "Open") {
+            vscode.commands.executeCommand("vscode.open", file);
+          }
+        });
+      }
+    })
+  );
 }
 
 class SessionTrackerViewProvider implements vscode.WebviewViewProvider {
@@ -203,7 +252,8 @@ class SessionTrackerViewProvider implements vscode.WebviewViewProvider {
 
   constructor(
     context: vscode.ExtensionContext,
-    refreshAll: () => void
+    refreshAll: () => void,
+    private readonly getGithubToken?: () => Promise<string | undefined>
   ) {
     this.context = context;
     this.refreshAll = refreshAll;
@@ -252,6 +302,29 @@ class SessionTrackerViewProvider implements vscode.WebviewViewProvider {
           break;
         case "saveNote":
           await this.saveNote(msg.payload as SessionNotePayload);
+          break;
+        case "addPlan":
+          await this.addPlan(msg.plan as {
+            date: string;
+            startTime: string;
+            durationMinutes: number;
+            label?: string;
+          });
+          break;
+        case "deletePlan":
+          await this.deletePlan(String(msg.id ?? ""));
+          break;
+        case "exportPlans":
+          await this.exportPlans();
+          break;
+        case "refreshLeaderboard":
+          await this.refreshLeaderboard();
+          break;
+        case "publishLeaderboard":
+          await this.publishLeaderboard();
+          break;
+        case "generateAiInsight":
+          await this.generateAiInsight();
           break;
         case "openJournal":
           this.navigateToTab("journal");
@@ -318,6 +391,9 @@ class SessionTrackerViewProvider implements vscode.WebviewViewProvider {
     this.view?.webview.postMessage({
       type: "history",
       history,
+      projects: summarizeProjects(history),
+      plannedSessions: getPlannedSessions(this.context.globalState),
+      aiInsights: getAiInsightHistory(this.context.globalState),
       isTracking: isSessionTrackingActive(),
       efficiency: getLiveEfficiency(),
       liveSession: liveRecord ?? null,
@@ -497,5 +573,128 @@ class SessionTrackerViewProvider implements vscode.WebviewViewProvider {
     const updated = applySessionNote(history, payload.sessionId, note);
     await this.context.globalState.update("devToolkit.sessionHistory", updated);
     this.refreshAll();
+  }
+
+  private async addPlan(plan: {
+    date: string;
+    startTime: string;
+    durationMinutes: number;
+    label?: string;
+  }) {
+    if (!plan?.date || !plan?.startTime || !Number.isFinite(plan.durationMinutes)) {
+      vscode.window.showInformationMessage("Add a date, start time, and duration for the planned session.");
+      return;
+    }
+    const plans = getPlannedSessions(this.context.globalState);
+    plans.push(createPlan(plan));
+    await savePlannedSessions(this.context.globalState, plans);
+    this.sendHistory();
+  }
+
+  private async deletePlan(id: string) {
+    const plans = getPlannedSessions(this.context.globalState).filter((plan) => plan.id !== id);
+    await savePlannedSessions(this.context.globalState, plans);
+    this.sendHistory();
+  }
+
+  private async exportPlans() {
+    const file = await exportPlansAsIcs(getPlannedSessions(this.context.globalState));
+    if (file) {
+      vscode.window.showInformationMessage("Planned sessions exported.", "Open").then((choice) => {
+        if (choice === "Open") {
+          vscode.commands.executeCommand("vscode.open", file);
+        }
+      });
+    }
+  }
+
+  private buildLocalLeaderboardRow(): LeaderboardRow {
+    const history = this.context.globalState.get<SessionRecord[]>(
+      "devToolkit.sessionHistory",
+      []
+    );
+    const today = new Date().toDateString();
+    const todaySessions = history.filter((session) => new Date(session.date).toDateString() === today);
+    const todayMinutes = Math.round(
+      todaySessions.reduce((sum, session) => sum + session.activeTime, 0) / 60
+    );
+    const focusScores = todaySessions
+      .map((session) => session.focusScore)
+      .filter((score): score is number => typeof score === "number");
+    const config = vscode.workspace.getConfiguration("devToolkit.sessionTracker");
+    const leaderboardConfig = config.get<{ name?: string; avatar?: string }>("leaderboard", {});
+    return {
+      rank: 1,
+      name: leaderboardConfig.name || vscode.env.machineId.slice(0, 8),
+      avatar: leaderboardConfig.avatar || "◆",
+      todayMinutes,
+      streak: this.currentDayStreak(history),
+      focusScore: focusScores.length
+        ? Math.round(focusScores.reduce((sum, score) => sum + score, 0) / focusScores.length)
+        : 0,
+    };
+  }
+
+  private async refreshLeaderboard() {
+    const rows = await loadLeaderboardRows(this.buildLocalLeaderboardRow());
+    await this.view?.webview.postMessage({ type: "leaderboard", rows, updatedAt: new Date().toISOString() });
+  }
+
+  private async publishLeaderboard() {
+    await publishLeaderboardStat(this.buildLocalLeaderboardRow());
+    vscode.window.showInformationMessage("Leaderboard stat published to GitHub Gist.");
+    await this.refreshLeaderboard();
+  }
+
+  private async generateAiInsight() {
+    const history = this.context.globalState.get<SessionRecord[]>(
+      "devToolkit.sessionHistory",
+      []
+    );
+    const summary = {
+      dailyMinutes: this.lastNDays(history, 7).map((date) => ({
+        date,
+        minutes: Math.round(
+          history
+            .filter((session) => new Date(session.date).toISOString().slice(0, 10) === date)
+            .reduce((sum, session) => sum + session.activeTime, 0) / 60
+        ),
+      })),
+      projects: summarizeProjects(history).slice(0, 5).map((project) => ({
+        name: project.displayName,
+        minutes: project.totalMinutes,
+      })),
+    };
+    const insight = await generateAiInsight(summary, await this.getGithubToken?.());
+    await saveAiInsight(this.context.globalState, insight);
+    this.sendHistory();
+  }
+
+  private currentDayStreak(history: SessionRecord[]): number {
+    const days = [...new Set(history.map((session) => new Date(session.date).toDateString()))]
+      .map((day) => new Date(day).getTime())
+      .sort((a, b) => b - a);
+    let cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+    let streak = 0;
+    for (const day of days) {
+      const current = new Date(day);
+      current.setHours(0, 0, 0, 0);
+      if ((cursor.getTime() - current.getTime()) / 86400000 < 1.5) {
+        streak++;
+        cursor = new Date(current.getTime() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  private lastNDays(_history: SessionRecord[], count: number): string[] {
+    return Array.from({ length: count }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (count - index - 1));
+      return date.toISOString().slice(0, 10);
+    });
   }
 }

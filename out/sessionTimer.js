@@ -48,6 +48,9 @@ const vscode = __importStar(require("vscode"));
 const languageBreakdown_1 = require("./features/languageBreakdown");
 const focusScore_1 = require("./features/focusScore");
 const deepWorkMode_1 = require("./features/deepWorkMode");
+const gitCorrelation_1 = require("./features/gitCorrelation");
+const projectAnalytics_1 = require("./features/projectAnalytics");
+const planner_1 = require("./features/planner");
 const sessionStateListeners = new Set();
 let latestLiveState;
 let sessionControls;
@@ -106,6 +109,11 @@ function registerSessionTimer(context) {
     let flowTimeSeconds = 0;
     let deepWorkSeconds = 0;
     let deepWorkCompleted = 0;
+    let pomodorosCompleted = 0;
+    let pomodoroFocusSeconds = 0;
+    let audioSeconds = 0;
+    let project = (0, projectAnalytics_1.detectCurrentProject)();
+    let commits = [];
     const languageBreakdown = {};
     // ── State ─────────────────────────────────────────────────────────
     let lastActivity = Date.now();
@@ -115,6 +123,10 @@ function registerSessionTimer(context) {
     let autoPausedByFocusLoss = false;
     let tickCount = 0;
     let flowStateNotified = false;
+    let pomodoroPhase = "work";
+    let pomodoroRemainingSeconds = 0;
+    let pomodoroCycle = 0;
+    let lastProjectSwitchPrompt = 0;
     const sessionStartTime = new Date();
     const sessionId = `session_${Date.now()}`;
     const startHour = sessionStartTime.getHours();
@@ -134,6 +146,53 @@ function registerSessionTimer(context) {
     const getEfficiencyBar = (efficiency) => {
         const filled = Math.max(0, Math.min(10, Math.round((efficiency / 100) * 10)));
         return "█".repeat(filled) + "░".repeat(10 - filled);
+    };
+    const resetPomodoroCycle = () => {
+        const config = vscode.workspace.getConfiguration("devToolkit.sessionTracker");
+        const durations = pomodoroDurations(config.get("pomodoro", {}));
+        pomodoroPhase = "work";
+        pomodoroRemainingSeconds = durations.work;
+    };
+    const tickPomodoro = (config) => {
+        if (config.enabled === false) {
+            return;
+        }
+        if (pomodoroRemainingSeconds <= 0) {
+            resetPomodoroCycle();
+        }
+        pomodoroRemainingSeconds--;
+        if (pomodoroRemainingSeconds > 0) {
+            return;
+        }
+        const durations = pomodoroDurations(config);
+        if (pomodoroPhase === "work") {
+            pomodorosCompleted++;
+            pomodoroCycle++;
+            pomodoroPhase = pomodoroCycle % 4 === 0 ? "longBreak" : "shortBreak";
+            pomodoroRemainingSeconds =
+                pomodoroPhase === "longBreak" ? durations.longBreak : durations.shortBreak;
+            vscode.window.setStatusBarMessage(pomodoroPhase === "longBreak"
+                ? "$(coffee) Long Pomodoro break started."
+                : "$(coffee) Short Pomodoro break started.", 4000);
+        }
+        else {
+            pomodoroPhase = "work";
+            pomodoroRemainingSeconds = durations.work;
+            vscode.window.setStatusBarMessage("$(play) Pomodoro focus block started.", 4000);
+        }
+    };
+    const refreshProjectAndCommits = () => {
+        const currentProject = (0, projectAnalytics_1.detectCurrentProject)();
+        if (currentProject?.projectId) {
+            if (project?.projectId &&
+                currentProject.projectId !== project.projectId &&
+                Date.now() - lastProjectSwitchPrompt > 300000) {
+                lastProjectSwitchPrompt = Date.now();
+                vscode.window.showInformationMessage(`Project changed from ${project.displayName} to ${currentProject.displayName}. FocusForge will tag the current session with the active project.`);
+            }
+            project = currentProject;
+        }
+        commits = (0, gitCorrelation_1.collectSessionCommits)(project?.rootPath, sessionStartTime);
     };
     const saveCurrentSession = () => {
         const history = context.globalState.get("devToolkit.sessionHistory", []);
@@ -170,6 +229,11 @@ function registerSessionTimer(context) {
             deepWorkSeconds,
             deepWorkCompleted,
             note: existingNote,
+            project,
+            commits,
+            pomodorosCompleted,
+            pomodoroFocusSeconds,
+            audioSeconds,
         };
         const MAX_HISTORY = 100;
         if (idx >= 0) {
@@ -182,6 +246,8 @@ function registerSessionTimer(context) {
             history.splice(0, history.length - MAX_HISTORY);
         }
         context.globalState.update("devToolkit.sessionHistory", history);
+        const plans = (0, planner_1.fulfillCoveredPlans)((0, planner_1.getPlannedSessions)(context.globalState), record);
+        void (0, planner_1.savePlannedSessions)(context.globalState, plans);
     };
     const buildLiveState = () => {
         const efficiency = totalTime > 0 ? Math.round((engagedTime / totalTime) * 100) : 100;
@@ -213,6 +279,11 @@ function registerSessionTimer(context) {
                 focusScore,
                 deepWorkSeconds,
                 deepWorkCompleted,
+                project,
+                commits,
+                pomodorosCompleted,
+                pomodoroFocusSeconds,
+                audioSeconds,
             },
             isIdle,
             isTracking,
@@ -272,6 +343,9 @@ function registerSessionTimer(context) {
                     suffix = `  ${langLabel} · ${formatTime(langSeconds)}`;
                 }
             }
+            if (pomodorosCompleted > 0) {
+                suffix += `  🍅 ×${pomodorosCompleted}`;
+            }
             statusBarItem.text = `${icon} ${formatTime(activeTime)}${suffix}`;
         }
         if (isIdle) {
@@ -319,6 +393,11 @@ function registerSessionTimer(context) {
         if (focusScoreEnabled && focusScoreInTooltip) {
             md.appendMarkdown(`$(eye) **Focus Score (today):** ${todayFocus}\n\n`);
         }
+        if (project?.displayName) {
+            md.appendMarkdown(`$(repo) **Project:** ${project.displayName}\n\n`);
+        }
+        md.appendMarkdown(`🍅 **Pomodoros:** ${pomodorosCompleted}\n\n`);
+        md.appendMarkdown(`$(git-commit) **Commits in session:** ${commits.length}\n\n`);
         md.appendMarkdown(`$(graph) **Active:** ${formatTime(activeTime)} / **Total:** ${formatTime(totalTime)}\n\n`);
         const goalTargetText = formatTime(dailyGoalSec);
         const goalProgressText = formatTime(activeTime);
@@ -366,6 +445,8 @@ function registerSessionTimer(context) {
             event.affectsConfiguration("devToolkit.sessionTracker.flowStateThresholdMinutes") ||
             event.affectsConfiguration("devToolkit.sessionTracker.breakReminderInterval") ||
             event.affectsConfiguration("devToolkit.sessionTracker.focusScore") ||
+            event.affectsConfiguration("devToolkit.sessionTracker.pomodoro") ||
+            event.affectsConfiguration("devToolkit.sessionTracker.audio") ||
             event.affectsConfiguration("devToolkit.sessionTracker.statusBarFormat")) {
             updateStatusBar();
             pushLiveUpdate();
@@ -391,6 +472,9 @@ function registerSessionTimer(context) {
             `Best Streak: ${formatTime(maxStreakSeconds)}`,
             `Efficiency: ${efficiency}%`,
             `Focus Score: ${focusScore}`,
+            `Project: ${project?.displayName ?? "Workspace"}`,
+            `Pomodoros: ${pomodorosCompleted}`,
+            `Commits: ${commits.length}`,
             `Breaks taken: ${breaksCount}`,
             `Keep up the great work! ☘️`,
         ].join("\n\n");
@@ -458,6 +542,7 @@ function registerSessionTimer(context) {
     updateStatusBar();
     pushLiveUpdate();
     statusBarItem.show();
+    resetPomodoroCycle();
     context.subscriptions.push((0, deepWorkMode_1.onDeepWorkCompleted)(() => {
         deepWorkCompleted += 1;
         pushLiveUpdate();
@@ -491,6 +576,8 @@ function registerSessionTimer(context) {
         const flowThresholdSeconds = config.get("flowStateThresholdMinutes", 25) * 60;
         const dailyGoalSec = config.get("dailyGoalMinutes", 120) * 60;
         const statusBarFormat = config.get("statusBarFormat", "timeAndStreak");
+        const pomodoroConfig = config.get("pomodoro", {});
+        const audioConfig = config.get("audio", {});
         const notifGoalReached = (config.get("notifications", {})
             ?.goalReminders) !== false;
         const notifBreakReminders = (config.get("notifications", {})
@@ -504,6 +591,12 @@ function registerSessionTimer(context) {
             activeTime++;
             if (isEngaged) {
                 engagedTime++;
+            }
+            if (pomodoroConfig.enabled !== false && pomodoroPhase === "work") {
+                pomodoroFocusSeconds++;
+            }
+            if (audioConfig.enabled && audioConfig.autoStartWithSession) {
+                audioSeconds++;
             }
             const activeLanguageId = vscode.window.activeTextEditor?.document.languageId;
             (0, languageBreakdown_1.addLanguageSeconds)(languageBreakdown, activeLanguageId, 1);
@@ -556,10 +649,13 @@ function registerSessionTimer(context) {
         if (deepWorkActive && isTracking) {
             deepWorkSeconds++;
         }
+        tickPomodoro(pomodoroConfig);
         updateStatusBar(statusBarFormat);
         pushLiveUpdate();
-        if (tickCount % 15 === 0)
+        if (tickCount % 15 === 0) {
+            refreshProjectAndCommits();
             saveCurrentSession();
+        }
     }, 1000);
     context.subscriptions.push(statusBarItem);
     context.subscriptions.push({
@@ -569,6 +665,13 @@ function registerSessionTimer(context) {
             sessionControls = undefined;
         },
     });
+}
+function pomodoroDurations(config) {
+    return {
+        work: Math.max(1, config.workMinutes ?? 25) * 60,
+        shortBreak: Math.max(1, config.shortBreakMinutes ?? 5) * 60,
+        longBreak: Math.max(1, config.longBreakMinutes ?? 15) * 60,
+    };
 }
 function mergeHistoryWithLive(history, liveRecord) {
     const merged = [...history];

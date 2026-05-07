@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Existing registrations
   registerSessionTimer(context);
-  registerSessionTracker(context);
+  registerSessionTracker(context, () => store.getToken());
   registerDeepWorkMode(context);
 
   context.subscriptions.push(
