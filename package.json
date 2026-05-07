@@ -138,6 +138,11 @@
           "submenu": "devToolkit.sessionNotesMenu",
           "when": "view == devToolkit.sessionTracker",
           "group": "navigation"
+        },
+        {
+          "command": "devToolkit.issues.refresh",
+          "when": "view == devToolkit.issueView",
+          "group": "navigation"
         }
       ],
       "devToolkit.sessionNotesMenu": [

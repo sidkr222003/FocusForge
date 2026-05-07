@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { readFileSync } from 'node:fs';
 import { GitHubClient } from './GitHubClient';
 import { IssueStore } from './IssueStore';
+import { WeeklyReportGenerator } from '../weeklyReport/WeeklyReportGenerator';
 import { GitHubIssue, IssueCompletionLog } from './types';
 
 interface ViewMessage {
@@ -145,6 +146,26 @@ export class IssueViewController implements vscode.WebviewViewProvider {
         }
         case 'newIssue': {
           await vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${this.requiredRepo()}/issues/new`));
+          break;
+        }
+        case 'generateCurrentWeekReport': {
+          const reportGen = new WeeklyReportGenerator(this.ctx, this.store);
+          const file = await reportGen.generateCurrentWeek();
+          await vscode.window.showInformationMessage('Weekly report generated.', 'Open Report').then(
+            (choice) => {
+              if (choice === 'Open Report') {
+                vscode.commands.executeCommand('vscode.open', file);
+              }
+            }
+          );
+          await this.post({ type: 'reportGenerated', file: file.toString() });
+          break;
+        }
+        case 'generateLastWeekReport': {
+          const reportGen = new WeeklyReportGenerator(this.ctx, this.store);
+          const file = await reportGen.generateLastWeek();
+          await vscode.commands.executeCommand('vscode.open', file);
+          await this.post({ type: 'reportGenerated', file: file.toString() });
           break;
         }
       }
