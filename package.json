@@ -2,7 +2,7 @@
   "name": "focusforge",
   "displayName": "FocusForge: Coding Session Tracker",
   "description": "A local-first VS Code productivity dashboard for focus time, Pomodoro cycles, projects, GitHub issues, commits, planner sessions, reports, and AI insights.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "NK2552003",
   "repository": {
     "type": "git",
