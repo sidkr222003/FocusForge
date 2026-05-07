@@ -169,6 +169,10 @@ window.addEventListener('message', (event) => {
           const token = el('tokenInput').value.trim();
           if (token) {
             vscode.postMessage({ type: 'submitToken', token });
+            // Hide the auth banner after submitting token
+            el('authBanner').classList.add('hidden');
+            // Show loading state or feedback
+            el('issuesList').innerHTML = '<div class="hint">Loading issues...</div>';
           }
         });
       } else {

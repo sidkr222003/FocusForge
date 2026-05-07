@@ -1,29 +1,4 @@
-```
-# Dependencies
-node_modules/
-
-# Logs and temp files
-*.log
-*.tmp
-
-# Environment
-.env
-.env.local
-.env.*
-
-# Editors
-.vscode/
-.idea/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-venv/
-.venv/
-.env
-.env.local
-.env.*
+```css
+/* No build artifacts, dependencies, or temp files detected in changes */
+/* Source files and webview assets should be tracked */
 ```
